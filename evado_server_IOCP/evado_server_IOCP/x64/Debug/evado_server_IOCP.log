@@ -1,0 +1,100 @@
+﻿  Common.cpp
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(83,7): error C2039: 'atomic': 'std'의 멤버가 아닙니다.
+  (소스 파일 'Common.cpp'을(를) 컴파일하는 중)
+      D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\predefined C++ types (compiler internal)(357,11):
+      'std' 선언을 참조하십시오.
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(83,7): error C7568: 가정한 함수 템플릿 'atomic' 뒤에 인수 목록이 없습니다.
+  (소스 파일 'Common.cpp'을(를) 컴파일하는 중)
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(83,7): error C2062: 예기치 않은 'unknown-type' 형식입니다.
+  (소스 파일 'Common.cpp'을(를) 컴파일하는 중)
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(83,22): error C2238: ';' 앞에 예기치 않은 토큰이 있습니다.
+  (소스 파일 'Common.cpp'을(를) 컴파일하는 중)
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(84,7): error C2039: 'atomic': 'std'의 멤버가 아닙니다.
+  (소스 파일 'Common.cpp'을(를) 컴파일하는 중)
+      D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\predefined C++ types (compiler internal)(357,11):
+      'std' 선언을 참조하십시오.
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(84,7): error C7568: 가정한 함수 템플릿 'atomic' 뒤에 인수 목록이 없습니다.
+  (소스 파일 'Common.cpp'을(를) 컴파일하는 중)
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(84,7): error C2062: 예기치 않은 'unknown-type' 형식입니다.
+  (소스 파일 'Common.cpp'을(를) 컴파일하는 중)
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(84,22): error C2238: ';' 앞에 예기치 않은 토큰이 있습니다.
+  (소스 파일 'Common.cpp'을(를) 컴파일하는 중)
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(85,7): error C2039: 'atomic': 'std'의 멤버가 아닙니다.
+  (소스 파일 'Common.cpp'을(를) 컴파일하는 중)
+      D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\predefined C++ types (compiler internal)(357,11):
+      'std' 선언을 참조하십시오.
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(85,7): error C7568: 가정한 함수 템플릿 'atomic' 뒤에 인수 목록이 없습니다.
+  (소스 파일 'Common.cpp'을(를) 컴파일하는 중)
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(85,7): error C2062: 예기치 않은 'unknown-type' 형식입니다.
+  (소스 파일 'Common.cpp'을(를) 컴파일하는 중)
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(85,22): error C2238: ';' 앞에 예기치 않은 토큰이 있습니다.
+  (소스 파일 'Common.cpp'을(를) 컴파일하는 중)
+  
+  main.cpp
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\main.cpp(12,40): error C2086: 'std::unordered_map<__int64,SESSION,std::hash<__int64>,std::equal_to<__int64>,std::allocator<std::pair<const __int64,SESSION>>> g_users': 재정의
+      D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\workerthread.h(30,40):
+      'g_users' 선언을 참조하십시오.
+  
+  WorkerThread.cpp
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(83,7): error C2039: 'atomic': 'std'의 멤버가 아닙니다.
+  (소스 파일 'WorkerThread.cpp'을(를) 컴파일하는 중)
+      D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\predefined C++ types (compiler internal)(357,11):
+      'std' 선언을 참조하십시오.
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(83,7): error C7568: 가정한 함수 템플릿 'atomic' 뒤에 인수 목록이 없습니다.
+  (소스 파일 'WorkerThread.cpp'을(를) 컴파일하는 중)
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(83,7): error C2062: 예기치 않은 'unknown-type' 형식입니다.
+  (소스 파일 'WorkerThread.cpp'을(를) 컴파일하는 중)
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(83,22): error C2238: ';' 앞에 예기치 않은 토큰이 있습니다.
+  (소스 파일 'WorkerThread.cpp'을(를) 컴파일하는 중)
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(84,7): error C2039: 'atomic': 'std'의 멤버가 아닙니다.
+  (소스 파일 'WorkerThread.cpp'을(를) 컴파일하는 중)
+      D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\predefined C++ types (compiler internal)(357,11):
+      'std' 선언을 참조하십시오.
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(84,7): error C7568: 가정한 함수 템플릿 'atomic' 뒤에 인수 목록이 없습니다.
+  (소스 파일 'WorkerThread.cpp'을(를) 컴파일하는 중)
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(84,7): error C2062: 예기치 않은 'unknown-type' 형식입니다.
+  (소스 파일 'WorkerThread.cpp'을(를) 컴파일하는 중)
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(84,22): error C2238: ';' 앞에 예기치 않은 토큰이 있습니다.
+  (소스 파일 'WorkerThread.cpp'을(를) 컴파일하는 중)
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(85,7): error C2039: 'atomic': 'std'의 멤버가 아닙니다.
+  (소스 파일 'WorkerThread.cpp'을(를) 컴파일하는 중)
+      D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\predefined C++ types (compiler internal)(357,11):
+      'std' 선언을 참조하십시오.
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(85,7): error C7568: 가정한 함수 템플릿 'atomic' 뒤에 인수 목록이 없습니다.
+  (소스 파일 'WorkerThread.cpp'을(를) 컴파일하는 중)
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(85,7): error C2062: 예기치 않은 'unknown-type' 형식입니다.
+  (소스 파일 'WorkerThread.cpp'을(를) 컴파일하는 중)
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\pch.h(85,22): error C2238: ';' 앞에 예기치 않은 토큰이 있습니다.
+  (소스 파일 'WorkerThread.cpp'을(를) 컴파일하는 중)
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\workerthread.h(30,6): error C2039: 'unordered_map': 'std'의 멤버가 아닙니다.
+  (소스 파일 'WorkerThread.cpp'을(를) 컴파일하는 중)
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\filesystem(37,1):
+      'std' 선언을 참조하십시오.
+  
+D:\4th_졸업작품\evado_server_IOCP\evado_server_IOCP\workerthread.h(30,6): error C7568: 가정한 함수 템플릿 'unordered_map' 뒤에 인수 목록이 없습니다.
+  (소스 파일 'WorkerThread.cpp'을(를) 컴파일하는 중)
+  
+  코드를 생성하고 있습니다...
