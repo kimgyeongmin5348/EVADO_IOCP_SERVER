@@ -2,15 +2,19 @@
 
 #include "Common.h"
 
+#include <DirectXMath.h>
+using namespace DirectX;
+
 //#define SET_DATA_FROM_DATABASE
 #define SERVER_STRESS_TEST
 
-constexpr char SC_P_AVATAR_INFO = 1;
+constexpr char SC_P_USER_INFO = 1;
 constexpr char SC_P_MOVE = 2;
 constexpr char SC_P_ENTER = 3;
 constexpr char SC_P_LEAVE = 4;
 constexpr char CS_P_LOGIN = 5;
 constexpr char CS_P_MOVE = 6;
+constexpr char SC_P_LOGIN_FAIL = 7;
 
 constexpr char MAX_ID_LENGTH = 20;
 
@@ -25,45 +29,54 @@ constexpr unsigned short MAP_WIDTH = 8;
 #pragma pack (push, 1)
 
 struct sc_packet_user_info {
-	unsigned char size;
-	char type;
-	long long  id;
-	short x, y, z;
-	short hp;
+	unsigned char	size;
+	char			type;
+	long long		id;
+	char			name[MAX_ID_LENGTH];
+	XMFLOAT3		position;
+	//XMFLOAT3		look;
+	//XMFLOAT3		right;
+	//short			hp;
 };
 
 struct sc_packet_move {
-	unsigned char size;
-	char type;
-	long long id;
-	short x, y, z;
+	unsigned char	size = sizeof(sc_packet_move); // 42πŸ¿Ã∆Æ
+	char			type = SC_P_MOVE;
+	long long		id;
+	char			name[MAX_ID_LENGTH];
+	XMFLOAT3		position;
 };
 
 struct sc_packet_enter {
-	unsigned char size;
-	char type;
-	long long  id;
-	char name[MAX_ID_LENGTH];
-	char o_type;
-	short x, y, z;
+	unsigned char	size;
+	char			type;
+	long long		id;
+	char			name[MAX_ID_LENGTH];
+	char			o_type;
+	XMFLOAT3		position;
 };
 
 struct sc_packet_leave {
-	unsigned char size;
-	char type;
-	long long  id;
+	unsigned char	size;
+	char			type;
+	long long		id;
 };
 
 struct cs_packet_login {
-	unsigned char  size;
-	char  type;
-	char  name[MAX_ID_LENGTH];
+	unsigned char	size;
+	char			type;
+	char			name[MAX_ID_LENGTH];
+};
+
+struct sc_packet_login_fail {
+	unsigned char	size;
+	char			type;
 };
 
 struct cs_packet_move {
-	unsigned char  size;
-	char  type;
-	char  direction;
+	unsigned char size = sizeof(cs_packet_move); 
+	char type = CS_P_MOVE;
+	XMFLOAT3 position; 
 };
 
 #pragma pack (pop)

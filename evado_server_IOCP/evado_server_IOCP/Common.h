@@ -1,10 +1,13 @@
 #pragma once
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "pch.h"
 #include <WinSock2.h>
 #include <mswsock.h>
 #include <unordered_map>
 #include <WS2tcpip.h>
+#include <atomic>
 
 #include <thread>
 
@@ -25,6 +28,16 @@
 #include <iomanip>
 
 
+// DirectX ฐüทร 
+#include <d3d12.h>  //
+#include <DirectXMath.h>
+#include <DirectXPackedVector.h> //
+#include <DirectXCollision.h> // 
+
+
 #pragma comment (lib, "WS2_32.LIB")
 #pragma comment (lib, "MSWSock.LIB")
 
+
+
+using namespace DirectX;
