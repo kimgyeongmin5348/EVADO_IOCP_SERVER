@@ -74,9 +74,9 @@ struct sc_packet_login_fail {
 };
 
 struct cs_packet_move {
-	unsigned char size = sizeof(cs_packet_move); 
-	char type = CS_P_MOVE;
-	XMFLOAT3 position; 
+	unsigned char	size = sizeof(cs_packet_move); 
+	char			type = CS_P_MOVE;
+	XMFLOAT3		position; 
 };
 
 #pragma pack (pop)

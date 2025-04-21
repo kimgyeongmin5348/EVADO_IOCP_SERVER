@@ -97,11 +97,7 @@ void SESSION::process_packet(unsigned char* p)
 
 		// ▶ 좌표 직접 적용
 		_position = packet->position;
-
-		// ▶ 월드 경계 검증 추가
-		constexpr float WORLD_MAX = 100.0f;
-		_position.x = std::clamp(_position.x, -WORLD_MAX, WORLD_MAX);
-		_position.z = std::clamp(_position.z, -WORLD_MAX, WORLD_MAX);
+		
 
 		send_player_position(); // 다른 클라이언트에 전송
 		break;
