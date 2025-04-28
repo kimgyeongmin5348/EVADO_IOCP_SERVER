@@ -2,14 +2,18 @@
 
 #include "Common.h"
 
+class SESSION;
+
+// 전역 변수 선언
+extern HANDLE g_hIOCP;
 extern std::atomic<long long> g_client_counter;
-constexpr short SERVER_PORT = 3000;
+extern std::unordered_map<long long, SESSION> g_sessions;  //교수님 코드에선 g_user로 되어 있음.
+extern std::mutex g_session_mutex;
+extern SOCKET g_listen_socket;
 
 enum IO_OP { IO_RECV, IO_SEND, IO_ACCEPT };
 
-class SESSION;
-extern HANDLE g_hIOCP;
-extern std::unordered_map<long long, SESSION> g_users;
+//class SESSION;
 
 class EXP_OVER
 {
@@ -22,7 +26,11 @@ public:
 	SOCKET			_accept_socket;
 	unsigned char	_buffer[1024];
 	WSABUF			_wsabuf[1];
+
+
 };
+
+EXP_OVER g_accept_over{ IO_ACCEPT };
 
 
 class SESSION {
@@ -33,7 +41,6 @@ public:
 	EXP_OVER		_recv_over{ IO_RECV };
 	unsigned char	_remained;
 
-	//short			_x, _y, _z;
 	XMFLOAT3		_position;
 	//XMFLOAT3		_look;
 	//XMFLOAT3		_right;
@@ -47,9 +54,11 @@ public:
 	void do_recv();
 	void do_send(void* buff);
 	void send_player_info_packet();
-	void send_player_position();
+	void broadcast_move_packet();
 	void process_packet(unsigned char* p);
+	
 };
 
 void print_error_message(int s_err);
 void do_accept(SOCKET s_socket, EXP_OVER* accept_over);
+DWORD WINAPI WorkerThread(LPVOID lpParam);

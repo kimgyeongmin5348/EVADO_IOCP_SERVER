@@ -2,8 +2,6 @@
 #include "workerthread.h"
 
 
-HANDLE g_hIOCP;
-std::unordered_map<long long, SESSION> g_users;
 
 int main()
 {
@@ -12,85 +10,43 @@ int main()
 	WSADATA WSAData;
 	WSAStartup(MAKEWORD(2, 0), &WSAData);
 
-	SOCKET s_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED);
-	if (s_socket <= 0) std::cout << "ERROR" << "원인";
+
+	// 1. 리스닝 소켓 생성
+	SOCKET g_listen_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED);;
+	if (g_listen_socket <= 0) std::cout << "ERROR" << "원인";
 	else std::cout << "Socket Created.\n";
 
 	SOCKADDR_IN addr;
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(SERVER_PORT);
 	addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	bind(s_socket, reinterpret_cast<sockaddr*>(&addr), sizeof(SOCKADDR_IN));
-	listen(s_socket, SOMAXCONN);
+	bind(g_listen_socket, reinterpret_cast<sockaddr*>(&addr), sizeof(SOCKADDR_IN));
+	listen(g_listen_socket, SOMAXCONN);
 	INT addr_size = sizeof(SOCKADDR_IN);
 
+	// 2. IOCP 생성 및 리스닝 소켓 연결
 	g_hIOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, 0);
-	CreateIoCompletionPort(reinterpret_cast<HANDLE>(s_socket), g_hIOCP, -1, 0);
+	CreateIoCompletionPort(reinterpret_cast<HANDLE>(g_listen_socket), g_hIOCP, -1, 0);
 
-	EXP_OVER accept_over(IO_ACCEPT);
+	//// 3. 워커 스레드 생성
+	//for (int i = 0; i < NUM_WORKER_THREADS; ++i) {
+	//	CreateThread(NULL, 0, WorkerThread, NULL, 0, NULL);
+	//}
 
-	do_accept(s_socket, &accept_over);
+	// 3. 초기 Accept 시작
+	do_accept(g_listen_socket, &g_accept_over);
 
-	//int new_id = 0;
-	while (true) {
-		DWORD io_size;
-		WSAOVERLAPPED* o;
-		ULONG_PTR key;
-		BOOL ret = GetQueuedCompletionStatus(g_hIOCP, &io_size, &key, &o, INFINITE);
-		EXP_OVER* eo = reinterpret_cast<EXP_OVER*>(o);
-		switch (eo->_io_op) {
-		case IO_ACCEPT: {
+	// 4. 워커 스레드 생성 및 메인 스레드 대기
+	std::cout << "서버 시작" << std::endl;
+	auto num_core = std::thread::hardware_concurrency();
+	std::vector <std::thread> workers;
+	for (unsigned int i = 0; i < num_core; ++i)
+		workers.emplace_back(WorkerThread);
+	for (auto& w : workers)
+		w.join();
 
-			long long client_id = ++g_client_counter;
-			std::cout << client_id << "번 클라 접속" << std::endl;
-			g_users.try_emplace(client_id, client_id, eo->_accept_socket);
 
-			// 새로운 AcceptEx 시작 (새로운 EXP_OVER 사용)
-			EXP_OVER* new_accept_over = new EXP_OVER(IO_ACCEPT);
-			do_accept(s_socket, new_accept_over);
-			delete eo; // 기존 OVERLAPPED 메모리 해제
 
-			/*g_users.try_emplace(new_id, new_id, eo->_accept_socket);
-			new_id++;
-			do_accept(s_socket, &accept_over);*/
-			break;
-		}
-
-		case IO_SEND: {
-			if (0 != ret && WSA_IO_PENDING != WSAGetLastError()) {
-				delete eo;
-			}
-			break;
-		}
-
-		case IO_RECV: {
-			SESSION& user = g_users[key];
-
-			unsigned char* p = eo->_buffer;
-			int data_size = io_size + user._remained;
-
-			while (p < eo->_buffer + data_size) {
-				unsigned char packet_size = *p;
-				if (p + packet_size > eo->_buffer + data_size)
-					break;
-				user.process_packet(p);
-				p = p + packet_size;
-			}
-
-			if (p < eo->_buffer + data_size)
-			{
-				user._remained = static_cast<unsigned char>(eo->_buffer + data_size - p);
-				memcpy(eo->_buffer, p, user._remained);
-			}
-			else
-				user._remained = 0;
-
-			user.do_recv();
-			break;
-		}
-
-		}
-	}
-	closesocket(s_socket);
+	closesocket(g_listen_socket);
 	WSACleanup();
 }

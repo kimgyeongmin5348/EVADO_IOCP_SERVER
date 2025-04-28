@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <WS2tcpip.h>
 #include <atomic>
+#include <algorithm>
+#include <shared_mutex>
 
 #include <thread>
 

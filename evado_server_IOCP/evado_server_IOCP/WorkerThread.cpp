@@ -1,28 +1,54 @@
 #include "workerthread.h"
 #include "Common.h" // 공통 헤더 파일 포함
 
-std::atomic<long long> g_client_counter = 0;
 
+// 전역 변수 초기화
+HANDLE g_hIOCP;
+std::atomic<long long> g_client_counter = 0;
+std::unordered_map<long long, SESSION*> g_sessions;
+std::mutex g_session_mutex;
+SOCKET g_listen_socket = INVALID_SOCKET;
+
+std::atomic<int> g_new_id = 0;
+
+
+// EXP_OVER 구현
 EXP_OVER::EXP_OVER(IO_OP op) : _io_op(op)
 {
 	ZeroMemory(&_over, sizeof(_over));
 	_wsabuf[0].buf = reinterpret_cast<CHAR*>(_buffer);
 	_wsabuf[0].len = sizeof(_buffer);
 }
+
 SESSION::SESSION()
 {
 	std::cout << "DEFAULT SESSION CONSTRUCTOR CALLED!!\n";
 	exit(-1);
 }
 
+// SESSION 구현
 SESSION::SESSION(long long session_id, SOCKET s) : _id(session_id), _c_socket(s), _recv_over(IO_RECV)
 {
+	// 세션 맵에 추가 (스레드 세이프)
+	{
+		std::lock_guard<std::mutex> lock(g_session_mutex);
+		g_sessions[_id] = this;
+	}
 	_remained = 0;
 	do_recv();
 }
 
+// leave 관련 구현
 SESSION::~SESSION()
 {
+	sc_packet_leave lp;
+	lp.size = sizeof(lp);
+	lp.type = SC_P_LEAVE;
+	lp.id = _id;
+	for (auto& u : g_sessions) {
+		if (_id != u.first)
+			u.second->do_send(&lp);
+	}
 	closesocket(_c_socket);
 }
 
@@ -48,7 +74,7 @@ void SESSION::do_send(void* buff)
 {
 	EXP_OVER* o = new EXP_OVER(IO_SEND);
 	const unsigned char packet_size = reinterpret_cast<unsigned char*>(buff)[0];
-	memcpy(o->_buffer, buff, packet_size);
+	memcpy_s(o->_buffer, sizeof(o->_buffer), buff, packet_size);
 	o->_wsabuf[0].len = packet_size;
 	DWORD size_sent;
 	WSASend(_c_socket, o->_wsabuf, 1, &size_sent, 0, &(o->_over), NULL);
@@ -60,8 +86,7 @@ void SESSION::send_player_info_packet()
 	p.size = sizeof(p);
 	p.type = SC_P_USER_INFO;
 	p.id = _id;
-	strncpy(p.name, _name.c_str(), MAX_ID_LENGTH - 1);
-	p.name[MAX_ID_LENGTH - 1] = '\0';
+	//strncpy_s(p.name, _name.c_str(), _TRUNCATE);
 	p.position = _position;
 	//p.look = _look;
 	//p.right = _right;
@@ -69,14 +94,13 @@ void SESSION::send_player_info_packet()
 	do_send(&p);
 }
 
-void SESSION::send_player_position()
-{
+void SESSION::broadcast_move_packet() {
 	sc_packet_move p;
-	p.id = _id;
 	p.size = sizeof(p);
 	p.type = SC_P_MOVE;
-	strncpy(p.name, _name.c_str(), MAX_ID_LENGTH - 1);
-	p.name[MAX_ID_LENGTH - 1] = '\0';
+	p.id = _id;
+	//strncpy_s(p.name, _name.c_str(), _TRUNCATE);
+	p.position = _position;
 	do_send(&p);
 }
 
@@ -84,22 +108,58 @@ void SESSION::process_packet(unsigned char* p)
 {
 	const unsigned char packet_type = p[1];
 	switch (packet_type) {
-	case CS_P_LOGIN:
+	case CS_P_LOGIN: 
 	{
 		cs_packet_login* packet = reinterpret_cast<cs_packet_login*>(p);
-		_name.assign(packet->name, MAX_ID_LENGTH);
-
+		_name = packet->name;
+		_position = { 0.0,0.0,0.0 };
 		send_player_info_packet();
+
+		std::cout << "[서버] " << _id << "번 클라 로그인: " << _name << std::endl;
+
+		sc_packet_enter ep;
+		ep.size = sizeof(ep);
+		ep.type = SC_P_ENTER;
+		ep.id = _id;
+		strcpy_s(ep.name, _name.c_str());
+		ep.o_type = 0;
+		ep.position = _position;
+
+		for (auto& u : g_sessions) {
+			if (u.first != _id)
+				u.second->do_send(&ep);
+		}
+
+		for (auto& u : g_sessions) {
+			if (u.first != _id) {
+				sc_packet_enter ep;
+				sc_packet_enter ep;
+				ep.size = sizeof(ep);
+				ep.type = SC_P_ENTER;
+				ep.id = u.first;
+				strcpy_s(ep.name, u.second->_name.c_str());
+				ep.o_type = 0;
+				ep.position = u.second->_position;
+				do_send(&ep);
+			}
+		}
 		break;
 	}
-	case CS_P_MOVE: {
+
+	case CS_P_MOVE: { // 이부분을 클라이언트랑 이야기 하면서 고쳐봐야 겠음. ( 난 서버에서 계산 해서 보내는것, 클라쪽은 그냥 좌표만 받자라는 생각)
 		cs_packet_move* packet = reinterpret_cast<cs_packet_move*>(p);
 
-		// ▶ 좌표 직접 적용
-		_position = packet->position;
-		
 
-		send_player_position(); // 다른 클라이언트에 전송
+		sc_packet_move mp;
+		mp.size = sizeof(mp);
+		mp.type = SC_P_MOVE;
+		mp.id = _id;
+		mp.position = _position;
+		for (auto& u : g_sessions) {
+			if (u.first != _id)
+				u.second->do_send(&mp);
+		}
+
 		break;
 	}
 	default:
@@ -124,10 +184,77 @@ void print_error_message(int s_err)
 
 void do_accept(SOCKET s_socket, EXP_OVER* accept_over)
 {
-	SOCKET c_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED);
+	SOCKET c_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED);;
 	accept_over->_accept_socket = c_socket;
-	CreateIoCompletionPort(reinterpret_cast<HANDLE>(c_socket), g_hIOCP, 3, 0);
 	AcceptEx(s_socket, c_socket, accept_over->_buffer, 0,
 		sizeof(SOCKADDR_IN) + 16, sizeof(SOCKADDR_IN) + 16,
 		NULL, &accept_over->_over);
 }
+
+
+//EXP_OVER g_accept_over{ IO_ACCEPT };
+
+// Worker Thread 핸들러
+DWORD WINAPI WorkerThread(LPVOID lpParam) {
+	while (true) {
+		DWORD io_size;
+		WSAOVERLAPPED* o;
+		ULONG_PTR key;
+		BOOL ret = GetQueuedCompletionStatus(g_hIOCP, &io_size, &key, &o, INFINITE);
+		EXP_OVER* eo = reinterpret_cast<EXP_OVER*>(o);
+		if (FALSE == ret) {
+			auto err_no = WSAGetLastError();
+			print_error_message(err_no);
+			if (g_sessions.count(key) != 0)
+				g_sessions.erase(key);
+			continue;
+		}
+		if ((eo->_io_op == IO_RECV || eo->_io_op == IO_SEND) && (0 == io_size)) {
+			if (g_sessions.count(key) != 0)
+				g_sessions.erase(key);
+			continue;
+		}
+
+		switch (eo->_io_op)
+		{
+		case IO_ACCEPT:
+		{
+			int new_id = g_new_id++;
+			CreateIoCompletionPort(reinterpret_cast<HANDLE>(eo->_accept_socket), g_hIOCP, new_id, 0);
+			g_sessions.try_emplace(new_id, new_id, eo->_accept_socket);
+
+			do_accept(g_listen_socket, &g_accept_over);
+		}
+		break;
+		case IO_SEND:
+			delete eo;
+			break;
+		case IO_RECV:
+			SESSION& user = g_sessions[key];
+			unsigned char* p = eo->_buffer;
+			int data_size = io_size + user._remained;
+
+			while (p < eo->_buffer + data_size) {
+				unsigned char packet_size = *p;
+				if (p + packet_size > eo->_buffer + data_size)
+					break;
+				user.process_packet(p);
+				p = p + packet_size;
+			}
+
+			if (p < eo->_buffer + data_size) {
+				user._remained = static_cast<unsigned char>(eo->_buffer + data_size - p);
+				memcpy(p, eo->_buffer, user._remained);
+			}
+			else
+				user._remained = 0;
+			user.do_recv();
+			break;
+
+		default:
+			break;
+		}
+	}
+}
+
+	

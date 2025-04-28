@@ -8,6 +8,10 @@ using namespace DirectX;
 //#define SET_DATA_FROM_DATABASE
 #define SERVER_STRESS_TEST
 
+#define SERVER_PORT 3000
+#define NUM_WORKER_THREADS 4
+
+
 constexpr char SC_P_USER_INFO = 1;
 constexpr char SC_P_MOVE = 2;
 constexpr char SC_P_ENTER = 3;
@@ -32,7 +36,7 @@ struct sc_packet_user_info {
 	unsigned char	size;
 	char			type;
 	long long		id;
-	char			name[MAX_ID_LENGTH];
+	//char			name[MAX_ID_LENGTH];  //교수님 코드엔 이게 없음 한번 없에고 해보자...
 	XMFLOAT3		position;
 	//XMFLOAT3		look;
 	//XMFLOAT3		right;
@@ -40,11 +44,11 @@ struct sc_packet_user_info {
 };
 
 struct sc_packet_move {
-	unsigned char	size = sizeof(sc_packet_move); // 42바이트
-	char			type = SC_P_MOVE;
+	unsigned char	size;
+	char			type;
 	long long		id;
-	char			name[MAX_ID_LENGTH];
-	XMFLOAT3		position;
+	//char			name[MAX_ID_LENGTH];
+	XMFLOAT3		position; 
 };
 
 struct sc_packet_enter {
@@ -66,6 +70,7 @@ struct cs_packet_login {
 	unsigned char	size;
 	char			type;
 	char			name[MAX_ID_LENGTH];
+
 };
 
 struct sc_packet_login_fail {
@@ -74,9 +79,10 @@ struct sc_packet_login_fail {
 };
 
 struct cs_packet_move {
-	unsigned char	size = sizeof(cs_packet_move); 
-	char			type = CS_P_MOVE;
+	unsigned char	size; 
+	char			type;
 	XMFLOAT3		position; 
 };
 
 #pragma pack (pop)
+
