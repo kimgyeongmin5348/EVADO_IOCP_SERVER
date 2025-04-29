@@ -7,9 +7,10 @@ class SESSION;
 // 전역 변수 선언
 extern HANDLE g_hIOCP;
 extern std::atomic<long long> g_client_counter;
-extern std::unordered_map<long long, SESSION> g_sessions;  //교수님 코드에선 g_user로 되어 있음.
+extern std::unordered_map<long long, SESSION*> g_sessions;  //교수님 코드에선 g_user로 되어 있음.
 extern std::mutex g_session_mutex;
 extern SOCKET g_listen_socket;
+
 
 enum IO_OP { IO_RECV, IO_SEND, IO_ACCEPT };
 
@@ -30,7 +31,7 @@ public:
 
 };
 
-EXP_OVER g_accept_over{ IO_ACCEPT };
+extern EXP_OVER g_accept_over;
 
 
 class SESSION {
@@ -61,4 +62,4 @@ public:
 
 void print_error_message(int s_err);
 void do_accept(SOCKET s_socket, EXP_OVER* accept_over);
-DWORD WINAPI WorkerThread(LPVOID lpParam);
+void WorkerThread();

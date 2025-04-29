@@ -8,6 +8,7 @@ std::atomic<long long> g_client_counter = 0;
 std::unordered_map<long long, SESSION*> g_sessions;
 std::mutex g_session_mutex;
 SOCKET g_listen_socket = INVALID_SOCKET;
+EXP_OVER g_accept_over{ IO_ACCEPT };
 
 std::atomic<int> g_new_id = 0;
 
@@ -29,11 +30,17 @@ SESSION::SESSION()
 // SESSION 구현
 SESSION::SESSION(long long session_id, SOCKET s) : _id(session_id), _c_socket(s), _recv_over(IO_RECV)
 {
-	// 세션 맵에 추가 (스레드 세이프)
-	{
-		std::lock_guard<std::mutex> lock(g_session_mutex);
-		g_sessions[_id] = this;
+	std::lock_guard<std::mutex> lock(g_session_mutex);
+
+	// 중복 ID 체크
+	if (g_sessions.find(_id) != g_sessions.end()) {
+		std::cerr << "중복 세션 ID: " << _id << std::endl;
+		closesocket(_c_socket);
+		delete this; // 메모리 누수 방지
+		return;
 	}
+
+	g_sessions[_id] = this; //포인터 저장
 	_remained = 0;
 	do_recv();
 }
@@ -132,15 +139,14 @@ void SESSION::process_packet(unsigned char* p)
 
 		for (auto& u : g_sessions) {
 			if (u.first != _id) {
-				sc_packet_enter ep;
-				sc_packet_enter ep;
-				ep.size = sizeof(ep);
-				ep.type = SC_P_ENTER;
-				ep.id = u.first;
-				strcpy_s(ep.name, u.second->_name.c_str());
-				ep.o_type = 0;
-				ep.position = u.second->_position;
-				do_send(&ep);
+				sc_packet_enter other_ep; // 고유 이름 사용
+				other_ep.size = sizeof(other_ep);
+				other_ep.type = SC_P_ENTER;
+				other_ep.id = u.first;
+				strcpy_s(other_ep.name, u.second->_name.c_str());
+				other_ep.o_type = 0;
+				other_ep.position = u.second->_position;
+				do_send(&other_ep);
 			}
 		}
 		break;
@@ -185,6 +191,10 @@ void print_error_message(int s_err)
 void do_accept(SOCKET s_socket, EXP_OVER* accept_over)
 {
 	SOCKET c_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED);;
+	if (INVALID_SOCKET == c_socket) {
+		std::cerr << "소켓 생성 실패: " << WSAGetLastError() << std::endl;
+		return;
+	}
 	accept_over->_accept_socket = c_socket;
 	AcceptEx(s_socket, c_socket, accept_over->_buffer, 0,
 		sizeof(SOCKADDR_IN) + 16, sizeof(SOCKADDR_IN) + 16,
@@ -195,23 +205,21 @@ void do_accept(SOCKET s_socket, EXP_OVER* accept_over)
 //EXP_OVER g_accept_over{ IO_ACCEPT };
 
 // Worker Thread 핸들러
-DWORD WINAPI WorkerThread(LPVOID lpParam) {
+void WorkerThread() {
 	while (true) {
 		DWORD io_size;
 		WSAOVERLAPPED* o;
 		ULONG_PTR key;
 		BOOL ret = GetQueuedCompletionStatus(g_hIOCP, &io_size, &key, &o, INFINITE);
 		EXP_OVER* eo = reinterpret_cast<EXP_OVER*>(o);
-		if (FALSE == ret) {
-			auto err_no = WSAGetLastError();
-			print_error_message(err_no);
-			if (g_sessions.count(key) != 0)
-				g_sessions.erase(key);
-			continue;
-		}
-		if ((eo->_io_op == IO_RECV || eo->_io_op == IO_SEND) && (0 == io_size)) {
-			if (g_sessions.count(key) != 0)
-				g_sessions.erase(key);
+
+		if (FALSE == ret || ((eo->_io_op == IO_RECV || eo->_io_op == IO_SEND) && (0 == io_size))) {
+			std::lock_guard<std::mutex> lock(g_session_mutex);
+			auto it = g_sessions.find(key);
+			if (it != g_sessions.end()) {
+				delete it->second;  // 메모리 해제
+				g_sessions.erase(it);
+			}
 			continue;
 		}
 
@@ -220,9 +228,11 @@ DWORD WINAPI WorkerThread(LPVOID lpParam) {
 		case IO_ACCEPT:
 		{
 			int new_id = g_new_id++;
-			CreateIoCompletionPort(reinterpret_cast<HANDLE>(eo->_accept_socket), g_hIOCP, new_id, 0);
-			g_sessions.try_emplace(new_id, new_id, eo->_accept_socket);
-
+			SOCKET client_socket = eo->_accept_socket;
+			// 새 세션 동적 할당
+			SESSION* new_session = new SESSION(new_id, client_socket);
+			// IOCP에 소켓 등록
+			CreateIoCompletionPort(reinterpret_cast<HANDLE>(client_socket), g_hIOCP, new_id, 0);
 			do_accept(g_listen_socket, &g_accept_over);
 		}
 		break;
@@ -230,7 +240,21 @@ DWORD WINAPI WorkerThread(LPVOID lpParam) {
 			delete eo;
 			break;
 		case IO_RECV:
-			SESSION& user = g_sessions[key];
+			// 1. 뮤텍스 락으로 세션 검색 (스레드 세이프)
+			SESSION* pUser = nullptr;
+			{
+				std::lock_guard<std::mutex> lock(g_session_mutex);
+				auto it = g_sessions.find(key);
+				if (it == g_sessions.end()) {
+					// 세션이 이미 제거된 경우
+					return;
+				}
+				pUser = it->second;  // 포인터 추출
+			}  // 여기서 락 자동 해제
+
+			// 2. 세션 작업 (락이 해제된 상태에서 진행)
+			SESSION& user = *pUser;  // 역참조
+
 			unsigned char* p = eo->_buffer;
 			int data_size = io_size + user._remained;
 
@@ -249,9 +273,6 @@ DWORD WINAPI WorkerThread(LPVOID lpParam) {
 			else
 				user._remained = 0;
 			user.do_recv();
-			break;
-
-		default:
 			break;
 		}
 	}
