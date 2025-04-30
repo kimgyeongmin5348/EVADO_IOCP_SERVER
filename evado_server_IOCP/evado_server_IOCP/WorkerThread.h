@@ -59,7 +59,7 @@ public:
 	void process_packet(unsigned char* p);
 	
 };
-
+void broadcast_packet(sc_packet_enter& ep, long long exclude_id);
 void print_error_message(int s_err);
 void do_accept(SOCKET s_socket, EXP_OVER* accept_over);
 void WorkerThread();

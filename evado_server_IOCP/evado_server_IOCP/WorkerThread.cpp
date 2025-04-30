@@ -12,7 +12,6 @@ EXP_OVER g_accept_over{ IO_ACCEPT };
 
 std::atomic<int> g_new_id = 0;
 
-
 // EXP_OVER 구현
 EXP_OVER::EXP_OVER(IO_OP op) : _io_op(op)
 {
@@ -31,16 +30,7 @@ SESSION::SESSION()
 SESSION::SESSION(long long session_id, SOCKET s) : _id(session_id), _c_socket(s), _recv_over(IO_RECV)
 {
 	std::lock_guard<std::mutex> lock(g_session_mutex);
-
-	// 중복 ID 체크
-	if (g_sessions.find(_id) != g_sessions.end()) {
-		std::cerr << "중복 세션 ID: " << _id << std::endl;
-		closesocket(_c_socket);
-		delete this; // 메모리 누수 방지
-		return;
-	}
-
-	g_sessions[_id] = this; //포인터 저장
+	g_sessions[_id] = this;
 	_remained = 0;
 	do_recv();
 }
@@ -89,7 +79,7 @@ void SESSION::do_send(void* buff)
 
 void SESSION::send_player_info_packet()
 {
-	sc_packet_user_info p;
+	sc_packet_user_info p{};
 	p.size = sizeof(p);
 	p.type = SC_P_USER_INFO;
 	p.id = _id;
@@ -119,42 +109,75 @@ void SESSION::process_packet(unsigned char* p)
 	{
 		cs_packet_login* packet = reinterpret_cast<cs_packet_login*>(p);
 		_name = packet->name;
+
+		// 이름 유효성 검사 추가
+		if (_name.find('\0') == std::string::npos) {
+			_name.resize(MAX_ID_LENGTH - 1);
+		}
+
+		// 2. 위치 초기화 (명시적 설정)
 		_position = { 0.0,0.0,0.0 };
+
+		// 3. 세션 리스트에 추가 (락 보호)
+		{
+			std::lock_guard<std::mutex> lock(g_session_mutex);
+			g_sessions[_id] = this;
+		}
+
+		// 4. 자신의 정보 전송
 		send_player_info_packet();
 
-		std::cout << "[서버] " << _id << "번 클라 로그인: " << _name << std::endl;
 
+
+		//std::cout << "[서버] " << _id << "번 클라 로그인: " << _name.substr(0, MAX_ID_LENGTH) << std::endl;
+
+		// 5. 기존 클라이언트들에게 신규 접속 알림
 		sc_packet_enter ep;
 		ep.size = sizeof(ep);
 		ep.type = SC_P_ENTER;
 		ep.id = _id;
-		strcpy_s(ep.name, _name.c_str());
+		strncpy_s(ep.name, _name.c_str(), _TRUNCATE);
 		ep.o_type = 0;
 		ep.position = _position;
 
-		for (auto& u : g_sessions) {
-			if (u.first != _id)
-				u.second->do_send(&ep);
-		}
-
-		for (auto& u : g_sessions) {
-			if (u.first != _id) {
-				sc_packet_enter other_ep; // 고유 이름 사용
-				other_ep.size = sizeof(other_ep);
-				other_ep.type = SC_P_ENTER;
-				other_ep.id = u.first;
-				strcpy_s(other_ep.name, u.second->_name.c_str());
-				other_ep.o_type = 0;
-				other_ep.position = u.second->_position;
-				do_send(&other_ep);
+		// 6. 브로드캐스트 (락 보호)
+		{
+			std::lock_guard<std::mutex> lock(g_session_mutex);
+			for (auto& [id, session] : g_sessions) {
+				if (id != _id) {
+					session->do_send(&ep);
+				}
 			}
 		}
-		break;
+
+		// 7. 기존 플레이어 정보 수신 (락 보호)
+		{
+			std::lock_guard<std::mutex> lock(g_session_mutex);
+			for (auto& [id, session] : g_sessions) {
+				if (id != _id) {
+					sc_packet_enter other_ep{};
+					other_ep.size = sizeof(other_ep);
+					other_ep.type = SC_P_ENTER;
+					other_ep.id = id;
+					strcpy_s(other_ep.name, session->_name.c_str());
+					other_ep.o_type = 0;
+					other_ep.position = session->_position;
+					do_send(&other_ep);
+				}
+			}
+		}
+
+		std::cout << "[서버] " << _id << "번 클라이언트 로그인: " << _name << std::endl;
 	}
 
 	case CS_P_MOVE: { // 이부분을 클라이언트랑 이야기 하면서 고쳐봐야 겠음. ( 난 서버에서 계산 해서 보내는것, 클라쪽은 그냥 좌표만 받자라는 생각)
 		cs_packet_move* packet = reinterpret_cast<cs_packet_move*>(p);
 
+		// 서버 위치 정보 업데이트 추가
+		_position = packet->position;  // 클라이언트에서 전송한 위치 반영
+
+		// 디버그 정보 출력
+		std::cout << "[서버] " << _id << "번 클라이언트 위치 수신: (" << _position.x << ", " << _position.y << ", " << _position.z << ")\n";
 
 		sc_packet_move mp;
 		mp.size = sizeof(mp);
@@ -162,8 +185,11 @@ void SESSION::process_packet(unsigned char* p)
 		mp.id = _id;
 		mp.position = _position;
 		for (auto& u : g_sessions) {
-			if (u.first != _id)
+			if (u.first != _id) {
 				u.second->do_send(&mp);
+				std::cout << "[서버] " << u.first << "번 클라이언트에 위치 전송: ("
+					<< mp.position.x << ", " << mp.position.y << ", " << mp.position.z << ")\n";
+			}
 		}
 
 		break;
@@ -171,6 +197,15 @@ void SESSION::process_packet(unsigned char* p)
 	default:
 		std::cout << "Error Invalid Packet Type\n";
 		exit(-1);
+	}
+}
+
+void broadcast_packet(sc_packet_enter& ep, long long exclude_id) {
+	std::lock_guard<std::mutex> lock(g_session_mutex); // 락 추가
+	for (auto& u : g_sessions) {
+		if (u.first != exclude_id) {
+			u.second->do_send(&ep);
+		}
 	}
 }
 
@@ -229,13 +264,23 @@ void WorkerThread() {
 		{
 			int new_id = g_new_id++;
 			SOCKET client_socket = eo->_accept_socket;
-			// 새 세션 동적 할당
+
+			// 중복 ID 사전 확인
+			{
+				std::lock_guard<std::mutex> lock(g_session_mutex);
+				if (g_sessions.find(new_id) != g_sessions.end()) {
+					std::cerr << "중복 세션 ID: " << new_id << std::endl;
+					closesocket(client_socket);
+					do_accept(g_listen_socket, &g_accept_over);
+					break;
+				}
+			}
+
 			SESSION* new_session = new SESSION(new_id, client_socket);
-			// IOCP에 소켓 등록
 			CreateIoCompletionPort(reinterpret_cast<HANDLE>(client_socket), g_hIOCP, new_id, 0);
 			do_accept(g_listen_socket, &g_accept_over);
+			break;
 		}
-		break;
 		case IO_SEND:
 			delete eo;
 			break;

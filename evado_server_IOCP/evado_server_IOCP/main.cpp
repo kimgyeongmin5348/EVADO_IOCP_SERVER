@@ -8,7 +8,10 @@ int main()
 	std::wcout.imbue(std::locale("korean"));
 
 	WSADATA WSAData;
-	WSAStartup(MAKEWORD(2, 0), &WSAData);
+	if (WSAStartup(MAKEWORD(2, 0), &WSAData) != 0) {
+		std::cerr << "[ERROR] WSAStartup 실패" << std::endl;
+		return 1;
+	}
 
 
 	// 1. 리스닝 소켓 생성
@@ -38,9 +41,9 @@ int main()
 
 	// 4. 워커 스레드 생성 및 메인 스레드 대기
 	std::cout << "서버 시작" << std::endl;
-	auto num_core = std::thread::hardware_concurrency();
-	std::vector <std::thread> workers;
-	for (unsigned int i = 0; i < num_core; ++i)
+	unsigned int num_threads = (std::min)(8u, std::thread::hardware_concurrency());
+	std::vector<std::thread> workers;
+	for (unsigned int i = 0; i < num_threads; ++i)
 		workers.emplace_back(WorkerThread);
 	for (auto& w : workers)
 		w.join();
