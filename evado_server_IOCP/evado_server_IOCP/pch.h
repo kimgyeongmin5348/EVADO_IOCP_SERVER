@@ -69,6 +69,7 @@ struct sc_packet_leave {
 struct cs_packet_login {
 	unsigned char	size;
 	char			type;
+	XMFLOAT3		position;
 	char			name[MAX_ID_LENGTH];
 
 };

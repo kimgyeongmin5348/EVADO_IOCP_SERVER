@@ -31,24 +31,18 @@ int main()
 	g_hIOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, 0);
 	CreateIoCompletionPort(reinterpret_cast<HANDLE>(g_listen_socket), g_hIOCP, -1, 0);
 
-	//// 3. 워커 스레드 생성
-	//for (int i = 0; i < NUM_WORKER_THREADS; ++i) {
-	//	CreateThread(NULL, 0, WorkerThread, NULL, 0, NULL);
-	//}
 
 	// 3. 초기 Accept 시작
 	do_accept(g_listen_socket, &g_accept_over);
 
 	// 4. 워커 스레드 생성 및 메인 스레드 대기
 	std::cout << "서버 시작" << std::endl;
-	unsigned int num_threads = (std::min)(8u, std::thread::hardware_concurrency());
+	auto num_threads = (std::min)(8u, std::thread::hardware_concurrency());
 	std::vector<std::thread> workers;
 	for (unsigned int i = 0; i < num_threads; ++i)
 		workers.emplace_back(WorkerThread);
 	for (auto& w : workers)
 		w.join();
-
-
 
 	closesocket(g_listen_socket);
 	WSACleanup();

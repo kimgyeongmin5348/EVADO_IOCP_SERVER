@@ -29,9 +29,16 @@ SESSION::SESSION()
 // SESSION 구현
 SESSION::SESSION(long long session_id, SOCKET s) : _id(session_id), _c_socket(s), _recv_over(IO_RECV)
 {
+	// 소켓 옵션 추가 (Keep-Alive 설정)
+	int opt = 1;
+	setsockopt(_c_socket, SOL_SOCKET, SO_KEEPALIVE, (char*)&opt, sizeof(opt));
+
+	// Nagle 알고리즘 비활성화 (실시간 통신 필수)
+	setsockopt(_c_socket, IPPROTO_TCP, TCP_NODELAY, (char*)&opt, sizeof(opt));
+
 	std::lock_guard<std::mutex> lock(g_session_mutex);
 	g_sessions[_id] = this;
-	_remained = 0;
+	std::cout << "[서버] " << _id << "번 클라이언트 접속 성공\n";
 	do_recv();
 }
 
@@ -65,6 +72,7 @@ void SESSION::do_recv()
 			exit(-1);
 		}
 	}
+	std::cout << "[서버] " << _id << "번 소켓 수신 대기 시작\n";
 }
 
 void SESSION::do_send(void* buff)
@@ -103,109 +111,92 @@ void SESSION::broadcast_move_packet() {
 
 void SESSION::process_packet(unsigned char* p)
 {
+	std::cout << "[서버] 패킷 처리 시작 - 크기: " << (int)p[0] << ", 타입: " << (int)p[1] << "\n";
 	const unsigned char packet_type = p[1];
 	switch (packet_type) {
 	case CS_P_LOGIN: 
 	{
 		cs_packet_login* packet = reinterpret_cast<cs_packet_login*>(p);
 		_name = packet->name;
+		_position = packet->position;
+		std::cout << "[서버] 로그인 요청 수신: " << _name << " 위치(" << _position.x << "," << _position.y << "," << _position.z << ")\n";
 
-		// 이름 유효성 검사 추가
-		if (_name.find('\0') == std::string::npos) {
-			_name.resize(MAX_ID_LENGTH - 1);
-		}
+		std::cout << "[서버] " << _id << "번 클라이언트 로그인: " << _name << std::endl;
 
-		// 2. 위치 초기화 (명시적 설정)
-		_position = { 0.0,0.0,0.0 };
-
-		// 3. 세션 리스트에 추가 (락 보호)
-		{
-			std::lock_guard<std::mutex> lock(g_session_mutex);
-			g_sessions[_id] = this;
-		}
-
-		// 4. 자신의 정보 전송
+		// 1. 자신의 정보 전송
 		send_player_info_packet();
 
 
+		// 2. 기존 클라이언트들에게 신규 접속 알림
+		sc_packet_enter new_user_pkt;
+		new_user_pkt.size = sizeof(new_user_pkt);
+		new_user_pkt.type = SC_P_ENTER;
+		new_user_pkt.id = _id;
+		strcpy_s(new_user_pkt.name, sizeof(new_user_pkt.name), _name.c_str()); // 안전한 복사
+		new_user_pkt.o_type = 0;
+		new_user_pkt.position = _position;
 
-		//std::cout << "[서버] " << _id << "번 클라 로그인: " << _name.substr(0, MAX_ID_LENGTH) << std::endl;
-
-		// 5. 기존 클라이언트들에게 신규 접속 알림
-		sc_packet_enter ep;
-		ep.size = sizeof(ep);
-		ep.type = SC_P_ENTER;
-		ep.id = _id;
-		strncpy_s(ep.name, _name.c_str(), _TRUNCATE);
-		ep.o_type = 0;
-		ep.position = _position;
-
-		// 6. 브로드캐스트 (락 보호)
+		// 3. 신규 클라이언트에게 기존 유저 정보 전송
 		{
 			std::lock_guard<std::mutex> lock(g_session_mutex);
-			for (auto& [id, session] : g_sessions) {
-				if (id != _id) {
-					session->do_send(&ep);
-				}
+			for (auto& [ex_id, ex_session] : g_sessions) {
+				if (ex_id == _id) continue;
+
+				// 기존 유저 정보 패킷 생성
+				sc_packet_enter existing_user_pkt;
+				existing_user_pkt.size = sizeof(existing_user_pkt);
+				existing_user_pkt.type = SC_P_ENTER;
+				existing_user_pkt.id = ex_id;
+				strcpy_s(existing_user_pkt.name, sizeof(existing_user_pkt.name), ex_session->_name.c_str());
+				existing_user_pkt.position = ex_session->_position;
+
+				// 신규 클라이언트에 전송
+				do_send(&existing_user_pkt);
 			}
 		}
-
-		// 7. 기존 플레이어 정보 수신 (락 보호)
 		{
 			std::lock_guard<std::mutex> lock(g_session_mutex);
-			for (auto& [id, session] : g_sessions) {
-				if (id != _id) {
-					sc_packet_enter other_ep{};
-					other_ep.size = sizeof(other_ep);
-					other_ep.type = SC_P_ENTER;
-					other_ep.id = id;
-					strcpy_s(other_ep.name, session->_name.c_str());
-					other_ep.o_type = 0;
-					other_ep.position = session->_position;
-					do_send(&other_ep);
+			for (auto& [ex_id, ex_session] : g_sessions) {
+				if (ex_id != _id) {
+					ex_session->do_send(&new_user_pkt);
 				}
 			}
-		}
-
-		std::cout << "[서버] " << _id << "번 클라이언트 로그인: " << _name << std::endl;
+		}		
+		break;
 	}
 
 	case CS_P_MOVE: { // 이부분을 클라이언트랑 이야기 하면서 고쳐봐야 겠음. ( 난 서버에서 계산 해서 보내는것, 클라쪽은 그냥 좌표만 받자라는 생각)
 		cs_packet_move* packet = reinterpret_cast<cs_packet_move*>(p);
 
+		std::cout << "[서버] " << _id << "번 클라이언트 위치 수신: (" << _position.x << ", " << _position.y << ", " << _position.z << ")\n";
+
 		// 서버 위치 정보 업데이트 추가
 		_position = packet->position;  // 클라이언트에서 전송한 위치 반영
 
-		// 디버그 정보 출력
-		std::cout << "[서버] " << _id << "번 클라이언트 위치 수신: (" << _position.x << ", " << _position.y << ", " << _position.z << ")\n";
+		
 
 		sc_packet_move mp;
 		mp.size = sizeof(mp);
 		mp.type = SC_P_MOVE;
 		mp.id = _id;
 		mp.position = _position;
-		for (auto& u : g_sessions) {
-			if (u.first != _id) {
-				u.second->do_send(&mp);
-				std::cout << "[서버] " << u.first << "번 클라이언트에 위치 전송: ("
-					<< mp.position.x << ", " << mp.position.y << ", " << mp.position.z << ")\n";
+		std::cout << "[서버] 브로드캐스트 시작 - 대상 수: " << g_sessions.size() - 1 << "\n";
+
+		// 모든 클라이언트에게 브로드캐스트
+		{
+			std::lock_guard<std::mutex> lock(g_session_mutex);
+			for (auto& [id, session] : g_sessions) {
+				if (id != _id) {
+					session->do_send(&mp);
+					std::cout << "[서버] " << id << "번 전송: (" << mp.position.x << "," << mp.position.y << "," << mp.position.z << ")\n";
+				}
 			}
 		}
-
 		break;
 	}
 	default:
 		std::cout << "Error Invalid Packet Type\n";
 		exit(-1);
-	}
-}
-
-void broadcast_packet(sc_packet_enter& ep, long long exclude_id) {
-	std::lock_guard<std::mutex> lock(g_session_mutex); // 락 추가
-	for (auto& u : g_sessions) {
-		if (u.first != exclude_id) {
-			u.second->do_send(&ep);
-		}
 	}
 }
 
@@ -226,15 +217,10 @@ void print_error_message(int s_err)
 void do_accept(SOCKET s_socket, EXP_OVER* accept_over)
 {
 	SOCKET c_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED);;
-	if (INVALID_SOCKET == c_socket) {
-		std::cerr << "소켓 생성 실패: " << WSAGetLastError() << std::endl;
-		return;
-	}
 	accept_over->_accept_socket = c_socket;
-	AcceptEx(s_socket, c_socket, accept_over->_buffer, 0,
-		sizeof(SOCKADDR_IN) + 16, sizeof(SOCKADDR_IN) + 16,
-		NULL, &accept_over->_over);
+	AcceptEx(s_socket, c_socket, accept_over->_buffer, 0, sizeof(SOCKADDR_IN) + 16, sizeof(SOCKADDR_IN) + 16, NULL, &accept_over->_over);
 }
+
 
 
 //EXP_OVER g_accept_over{ IO_ACCEPT };
@@ -248,13 +234,16 @@ void WorkerThread() {
 		BOOL ret = GetQueuedCompletionStatus(g_hIOCP, &io_size, &key, &o, INFINITE);
 		EXP_OVER* eo = reinterpret_cast<EXP_OVER*>(o);
 
-		if (FALSE == ret || ((eo->_io_op == IO_RECV || eo->_io_op == IO_SEND) && (0 == io_size))) {
-			std::lock_guard<std::mutex> lock(g_session_mutex);
-			auto it = g_sessions.find(key);
-			if (it != g_sessions.end()) {
-				delete it->second;  // 메모리 해제
-				g_sessions.erase(it);
-			}
+		if (FALSE == ret) {
+			auto err_no = WSAGetLastError();
+			print_error_message(err_no);
+			if (g_sessions.count(key) != 0)
+				g_sessions.erase(key);
+			continue;
+		}
+		if ((eo->_io_op == IO_RECV || eo->_io_op == IO_SEND) && (0 == io_size)) {
+			if (g_sessions.count(key) != 0)
+				g_sessions.erase(key);
 			continue;
 		}
 
@@ -262,24 +251,16 @@ void WorkerThread() {
 		{
 		case IO_ACCEPT:
 		{
-			int new_id = g_new_id++;
+			
+			long long new_id = g_new_id++;
 			SOCKET client_socket = eo->_accept_socket;
 
-			// 중복 ID 사전 확인
-			{
-				std::lock_guard<std::mutex> lock(g_session_mutex);
-				if (g_sessions.find(new_id) != g_sessions.end()) {
-					std::cerr << "중복 세션 ID: " << new_id << std::endl;
-					closesocket(client_socket);
-					do_accept(g_listen_socket, &g_accept_over);
-					break;
-				}
-			}
-
-			SESSION* new_session = new SESSION(new_id, client_socket);
 			CreateIoCompletionPort(reinterpret_cast<HANDLE>(client_socket), g_hIOCP, new_id, 0);
+			g_sessions.try_emplace(new_id, new SESSION(new_id, eo->_accept_socket));
+			
 			do_accept(g_listen_socket, &g_accept_over);
 			break;
+
 		}
 		case IO_SEND:
 			delete eo;
