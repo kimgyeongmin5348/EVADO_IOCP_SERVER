@@ -59,6 +59,7 @@ public:
 	
 };
 
+void safe_remove_session(long long id);
 void print_error_message(int s_err);
 void do_accept(SOCKET s_socket);
 void WorkerThread();

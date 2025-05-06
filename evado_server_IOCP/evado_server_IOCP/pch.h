@@ -8,6 +8,7 @@ using namespace DirectX;
 //#define SET_DATA_FROM_DATABASE
 #define SERVER_STRESS_TEST
 
+#define MAX_PACKET_SIZE 1024
 #define SERVER_PORT 3000
 #define NUM_WORKER_THREADS 4
 
@@ -56,7 +57,7 @@ struct sc_packet_enter {
 	char			type;
 	long long		id;
 	char			name[MAX_ID_LENGTH];
-	char			o_type;
+	//char			o_type;
 	XMFLOAT3		position;
 };
 

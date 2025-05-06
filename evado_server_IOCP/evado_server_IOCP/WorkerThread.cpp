@@ -10,6 +10,26 @@ std::mutex g_session_mutex;
 SOCKET g_listen_socket = INVALID_SOCKET;
 std::atomic<int> g_new_id = 0;
 
+void safe_remove_session(long long id) {
+	SESSION* target = nullptr;
+	{
+		std::lock_guard<std::mutex> lock(g_session_mutex);
+		auto it = g_sessions.find(id);
+		if (it == g_sessions.end()) return;
+		target = it->second;
+		g_sessions.erase(it); // 맵에서 먼저 제거
+	}
+
+	// 뮤텍스 밖에서 소켓 닫기 및 메모리 해제
+	if (target) {
+		if (target->_c_socket != INVALID_SOCKET) {
+			closesocket(target->_c_socket);
+			target->_c_socket = INVALID_SOCKET;
+		}
+		delete target;
+	}
+}
+
 // EXP_OVER 구현
 EXP_OVER::EXP_OVER(IO_OP op) : _io_op(op)
 {
@@ -45,30 +65,17 @@ SESSION::SESSION(long long session_id, SOCKET s) : _id(session_id), _c_socket(s)
 // leave 관련 구현
 SESSION::~SESSION()
 {
-	LINGER linger_opt = { 1, 0 }; // 즉시 닫기
-	setsockopt(_c_socket, SOL_SOCKET, SO_LINGER, (char*)&linger_opt, sizeof(linger_opt));
+	if (_c_socket != INVALID_SOCKET) {
+		LINGER linger_opt = { 1, 0 };
+		setsockopt(_c_socket, SOL_SOCKET, SO_LINGER, (char*)&linger_opt, sizeof(linger_opt));
+		closesocket(_c_socket);
+	}
 
-	sc_packet_leave lp{};
+	/*sc_packet_leave lp{};
 	lp.size = sizeof(lp);
 	lp.type = SC_P_LEAVE;
-	lp.id = _id;
-	// 다른 세션 목록 임시 복사
-	std::vector<SESSION*> other_sessions;
-	{
-		std::lock_guard<std::mutex> lock(g_session_mutex);
-		for (auto& u : g_sessions) {
-			if (_id != u.first && u.second->_c_socket != INVALID_SOCKET)
-				other_sessions.push_back(u.second);
-		}
-	}
+	lp.id = _id;*/
 
-	// 뮤텍스 외부에서 전송 수행
-	for (auto* session : other_sessions) {
-		session->do_send(&lp);
-	}
-
-	closesocket(_c_socket);
-	_c_socket = INVALID_SOCKET;
 }
 
 void SESSION::do_recv() {
@@ -99,6 +106,7 @@ void SESSION::do_recv() {
 void SESSION::do_send(void* buff)
 {
 	if (_c_socket == INVALID_SOCKET) return;
+
 	EXP_OVER* o = new EXP_OVER(IO_SEND);
 	const unsigned char packet_size = reinterpret_cast<unsigned char*>(buff)[0];
 	memcpy_s(o->_buffer, sizeof(o->_buffer), buff, packet_size);
@@ -109,18 +117,8 @@ void SESSION::do_send(void* buff)
 		int error = WSAGetLastError();
 		if (error != WSA_IO_PENDING) {
 			std::cout << "[오류] 전송 실패: " << error << std::endl;
-			closesocket(_c_socket);
-			_c_socket = INVALID_SOCKET;
+			safe_remove_session(_id); // 직접 삭제 대신 안전 제거 함수 호출
 			delete o;
-
-			// 세션 제거 및 메모리 해제
-			std::lock_guard<std::mutex> lock(g_session_mutex);
-			auto it = g_sessions.find(_id);
-			if (it != g_sessions.end()) {
-				g_sessions.erase(it);
-				delete this; // 현재 세션 삭제
-			}
-			return;
 		}
 	}
 }
@@ -146,12 +144,17 @@ void SESSION::broadcast_move_packet() {
 	p.id = _id;
 	p.position = _position;
 
-	std::lock_guard<std::mutex> lock(g_session_mutex);
-	for (auto& [id, session] : g_sessions) {
-		if (id == _id) continue;
-		if (session->_c_socket == INVALID_SOCKET) continue;
+	std::vector<SESSION*> alive_sessions;
+	{
+		std::lock_guard<std::mutex> lock(g_session_mutex);
+		for (auto& [id, session] : g_sessions) {
+			if (session->_c_socket != INVALID_SOCKET && id != _id)
+				alive_sessions.push_back(session);
+		}
+	}
+
+	for (SESSION* session : alive_sessions) {
 		session->do_send(&p);
-		std::cout << "[서버] " << id << "번 전송: (" << p.position.x << "," << p.position.y << "," << p.position.z << ")\n";
 	}
 }
 
@@ -179,7 +182,7 @@ void SESSION::process_packet(unsigned char* p)
 		new_user_pkt.type = SC_P_ENTER;
 		new_user_pkt.id = _id;
 		strcpy_s(new_user_pkt.name, sizeof(new_user_pkt.name), _name.c_str()); // 안전한 복사
-		new_user_pkt.o_type = 0;
+		//new_user_pkt.o_type = 0;
 		new_user_pkt.position = _position;
 
 		// 3. 신규 클라이언트에게 기존 유저 정보 전송
@@ -290,16 +293,9 @@ void WorkerThread() {
 		BOOL ret = GetQueuedCompletionStatus(g_hIOCP, &io_size, &key, &o, INFINITE);
 		EXP_OVER* eo = reinterpret_cast<EXP_OVER*>(o);
 
-		if (FALSE == ret) {
-			auto err_no = WSAGetLastError();
-			print_error_message(err_no);
-			if (g_sessions.count(key) != 0)
-				g_sessions.erase(key);
-			continue;
-		}
-		if ((eo->_io_op == IO_RECV || eo->_io_op == IO_SEND) && (0 == io_size)) {
-			if (g_sessions.count(key) != 0)
-				g_sessions.erase(key);
+		if (FALSE == ret || (0 == io_size && (eo->_io_op == IO_RECV || eo->_io_op == IO_SEND))) {
+			safe_remove_session(key); // 연결 종료 시 안전 제거
+			delete eo;
 			continue;
 		}
 
@@ -383,11 +379,19 @@ void WorkerThread() {
 			int data_size = io_size + user._remained;
 
 			while (p < eo->_buffer + data_size) {
-				unsigned char packet_size = *p;
-				if (p + packet_size > eo->_buffer + data_size)
+				if (data_size < 2) break; // 최소 패킷 크기(헤더 2바이트) 확인
+				unsigned char packet_size = p[0];
+
+				// 패킷 크기 검증 (헤더 포함 전체 크기)
+				if (packet_size < sizeof(unsigned char) ||
+					packet_size > MAX_PACKET_SIZE ||
+					(p + packet_size) > (eo->_buffer + data_size)) {
+					std::cerr << "[오류] 잘못된 패킷 크기: " << (int)packet_size << "\n";
 					break;
+				}
+
 				user.process_packet(p);
-				p = p + packet_size;
+				p += packet_size;
 			}
 
 			if (p < eo->_buffer + data_size) {
@@ -396,7 +400,7 @@ void WorkerThread() {
 			}
 			else
 				user._remained = 0;
-			user.do_recv();
+			pUser->do_recv();
 			break;
 		}
 	}
