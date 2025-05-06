@@ -31,8 +31,6 @@ public:
 
 };
 
-extern EXP_OVER g_accept_over;
-
 
 class SESSION {
 public:
@@ -46,6 +44,7 @@ public:
 	//XMFLOAT3		_look;
 	//XMFLOAT3		_right;
 	std::string		_name;
+	std::atomic<bool> _is_sending{ false };
 
 public:
 	SESSION();
@@ -61,5 +60,5 @@ public:
 };
 
 void print_error_message(int s_err);
-void do_accept(SOCKET s_socket, EXP_OVER* accept_over);
+void do_accept(SOCKET s_socket);
 void WorkerThread();

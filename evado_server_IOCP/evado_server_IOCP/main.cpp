@@ -15,7 +15,7 @@ int main()
 
 
 	// 1. 리스닝 소켓 생성
-	SOCKET g_listen_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED);;
+	g_listen_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED);
 	if (g_listen_socket <= 0) std::cout << "ERROR" << "원인";
 	else std::cout << "Socket Created.\n";
 
@@ -33,7 +33,7 @@ int main()
 
 
 	// 3. 초기 Accept 시작
-	do_accept(g_listen_socket, &g_accept_over);
+	do_accept(g_listen_socket);
 
 	// 4. 워커 스레드 생성 및 메인 스레드 대기
 	std::cout << "서버 시작" << std::endl;
