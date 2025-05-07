@@ -11,6 +11,7 @@ using namespace DirectX;
 #define MAX_PACKET_SIZE 1024
 #define SERVER_PORT 3000
 #define NUM_WORKER_THREADS 4
+#define MAX_USER 5000
 
 
 constexpr char SC_P_USER_INFO = 1;
@@ -67,10 +68,10 @@ struct sc_packet_leave {
 	long long		id;
 };
 
-struct cs_packet_login {
+struct cs_packet_login { // 로그인 정보니까 위치정보를 없에보자
 	unsigned char	size;
 	char			type;
-	XMFLOAT3		position;
+	//XMFLOAT3		position;
 	char			name[MAX_ID_LENGTH];
 
 };

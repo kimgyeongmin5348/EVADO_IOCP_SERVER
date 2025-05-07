@@ -71,10 +71,10 @@ SESSION::~SESSION()
 		closesocket(_c_socket);
 	}
 
-	/*sc_packet_leave lp{};
+	sc_packet_leave lp{};
 	lp.size = sizeof(lp);
 	lp.type = SC_P_LEAVE;
-	lp.id = _id;*/
+	lp.id = _id;
 
 }
 
@@ -163,12 +163,12 @@ void SESSION::process_packet(unsigned char* p)
 	std::cout << "[서버] 패킷 처리 시작 - 크기: " << (int)p[0] << ", 타입: " << (int)p[1] << "\n";
 	const unsigned char packet_type = p[1];
 	switch (packet_type) {
-	case CS_P_LOGIN: 
+	case CS_P_LOGIN:
 	{
 		cs_packet_login* packet = reinterpret_cast<cs_packet_login*>(p);
 		_name = packet->name;
-		_position = packet->position;
-		std::cout << "[서버] 로그인 요청 수신: " << _name << " 위치(" << _position.x << "," << _position.y << "," << _position.z << ")\n";
+		//_position = packet->position;
+		std::cout << "[서버] 로그인 요청 수신: " << _name << "\n";
 
 		std::cout << "[서버] " << _id << "번 클라이언트 로그인: " << _name << std::endl;
 
@@ -181,7 +181,7 @@ void SESSION::process_packet(unsigned char* p)
 		new_user_pkt.size = sizeof(new_user_pkt);
 		new_user_pkt.type = SC_P_ENTER;
 		new_user_pkt.id = _id;
-		strcpy_s(new_user_pkt.name, sizeof(new_user_pkt.name), _name.c_str()); // 안전한 복사
+		//strcpy_s(new_user_pkt.name, sizeof(new_user_pkt.name), _name.c_str()); // 안전한 복사
 		//new_user_pkt.o_type = 0;
 		new_user_pkt.position = _position;
 
@@ -196,7 +196,7 @@ void SESSION::process_packet(unsigned char* p)
 				existing_user_pkt.size = sizeof(existing_user_pkt);
 				existing_user_pkt.type = SC_P_ENTER;
 				existing_user_pkt.id = ex_id;
-				strcpy_s(existing_user_pkt.name, sizeof(existing_user_pkt.name), ex_session->_name.c_str());
+				//strcpy_s(existing_user_pkt.name, sizeof(existing_user_pkt.name), ex_session->_name.c_str());
 				existing_user_pkt.position = ex_session->_position;
 
 				// 신규 클라이언트에 전송
@@ -210,7 +210,7 @@ void SESSION::process_packet(unsigned char* p)
 					ex_session->do_send(&new_user_pkt);
 				}
 			}
-		}		
+		}
 		break;
 	}
 
@@ -303,7 +303,7 @@ void WorkerThread() {
 		{
 		case IO_ACCEPT:
 		{
-			
+
 			long long new_id = g_new_id.fetch_add(1);
 			SOCKET client_socket = eo->_accept_socket;
 
@@ -406,4 +406,3 @@ void WorkerThread() {
 	}
 }
 
-	
