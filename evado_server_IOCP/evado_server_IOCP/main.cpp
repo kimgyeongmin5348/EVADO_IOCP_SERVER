@@ -35,6 +35,8 @@ int main()
 	// 3. 초기 Accept 시작
 	do_accept(g_listen_socket);
 
+	TestSpawnMultipleItems();
+
 	// 4. 워커 스레드 생성 및 메인 스레드 대기
 	std::cout << "서버 시작" << std::endl;
 	auto num_threads = (std::min)(8u, std::thread::hardware_concurrency());

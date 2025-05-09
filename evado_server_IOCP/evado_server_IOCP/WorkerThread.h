@@ -53,13 +53,16 @@ public:
 
 	void do_recv();
 	void do_send(void* buff);
-	void send_player_info_packet();
-	void broadcast_move_packet();
+	void send_player_info_packet();	
 	void process_packet(unsigned char* p);
+	void HandleItemPickup(long long item_id);
 	
 };
 
+void BroadcastToAll(void* pkt, long long exclude_id = -1);
 void safe_remove_session(long long id);
 void print_error_message(int s_err);
 void do_accept(SOCKET s_socket);
 void WorkerThread();
+
+void TestSpawnMultipleItems();

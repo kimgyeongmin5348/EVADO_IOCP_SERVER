@@ -1,8 +1,7 @@
 ﻿  WorkerThread.cpp
-  main.cpp
   코드를 생성하고 있습니다.
-  252 of 415 functions (60.7%) were compiled, the rest were copied from previous compilation.
-    167 functions were new in current compilation
-    25 functions had inline decision re-evaluated but remain unchanged
+  3 of 668 functions ( 0.4%) were compiled, the rest were copied from previous compilation.
+    1 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
   코드를 생성했습니다.
   evado_server_IOCP.vcxproj -> D:\4th_졸업작품\EVADO_IOCP_SERVER\evado_server_IOCP\x64\Release\evado_server_IOCP.exe

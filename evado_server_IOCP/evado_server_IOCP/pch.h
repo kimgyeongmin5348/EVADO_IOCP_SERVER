@@ -22,6 +22,16 @@ constexpr char CS_P_LOGIN = 5;
 constexpr char CS_P_MOVE = 6;
 constexpr char SC_P_LOGIN_FAIL = 7;
 
+
+constexpr unsigned short MAP_HEIGHT = 8;
+constexpr unsigned short MAP_WIDTH = 8;
+
+constexpr char SC_P_ITEM_SPAWN = 9;
+constexpr char SC_P_ITEM_DESPAWN = 10;
+constexpr char SC_P_ITEM_MOVE = 11;
+constexpr char CS_P_ITEM_PICKUP = 12;
+constexpr char CS_P_ITEM_MOVE = 13;
+
 constexpr char MAX_ID_LENGTH = 20;
 
 constexpr char MOVE_UP = 1;
@@ -29,8 +39,6 @@ constexpr char MOVE_DOWN = 2;
 constexpr char MOVE_LEFT = 3;
 constexpr char MOVE_RIGHT = 4;
 
-constexpr unsigned short MAP_HEIGHT = 8;
-constexpr unsigned short MAP_WIDTH = 8;
 
 #pragma pack (push, 1)
 
@@ -85,6 +93,50 @@ struct cs_packet_move {
 	unsigned char	size; 
 	char			type;
 	XMFLOAT3		position; 
+};
+
+// 아이템
+enum ITEM_TYPE : int {
+	ITEM_TYPE_SHOVEL = 1,
+	ITEM_TYPE_HANDMAP = 2,
+	ITEM_TYPE_FLASHLIGHT = 3,
+	ITEM_TYPE_WHISTLE = 4
+};
+
+struct sc_packet_item_spawn {
+	unsigned char	size;
+	char			type;
+	long long		item_id;
+	XMFLOAT3		position;
+	int				item_type;
+};
+
+struct sc_packet_item_despawn {
+	unsigned char	size;
+	char			type;
+	long long		item_id;
+};
+
+struct cs_packet_item_pickup {
+	unsigned char	size;
+	char			type;
+	long long		item_id;
+	long long		player_id;
+};
+
+struct cs_packet_item_move {
+	unsigned char	size;
+	char			type;
+	long long		item_id;
+	XMFLOAT3		position;
+};
+
+struct sc_packet_item_move {
+	unsigned char	size;
+	char			type;
+	long long		item_id;
+	XMFLOAT3		position;
+	long long		holder_id; // 소유자 ID (0 = 지면에 있음)
 };
 
 #pragma pack (pop)

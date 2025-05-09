@@ -25,6 +25,12 @@
     <Filter Include="Contents">
       <UniqueIdentifier>{1c56de23-0a5b-4fbd-be57-69f94b5d4231}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Contents\NPC">
+      <UniqueIdentifier>{59e139e3-0219-476d-bb5e-554707048596}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Contents\Item">
+      <UniqueIdentifier>{a008baf7-8168-4dfd-b767-963b97600b87}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WorkerThread.cpp">
@@ -32,6 +38,15 @@
     </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Server_Main</Filter>
+    </ClCompile>
+    <ClCompile Include="Monster.cpp">
+      <Filter>Contents\NPC</Filter>
+    </ClCompile>
+    <ClCompile Include="Item.cpp">
+      <Filter>Contents\Item</Filter>
+    </ClCompile>
+    <ClCompile Include="ItemManager.cpp">
+      <Filter>Contents\Item</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -43,6 +58,15 @@
     </ClInclude>
     <ClInclude Include="pch.h">
       <Filter>Server_Main\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="Monster.h">
+      <Filter>Contents\NPC</Filter>
+    </ClInclude>
+    <ClInclude Include="Item.h">
+      <Filter>Contents\Item</Filter>
+    </ClInclude>
+    <ClInclude Include="ItemManager.h">
+      <Filter>Contents\Item</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

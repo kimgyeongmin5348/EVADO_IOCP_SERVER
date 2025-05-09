@@ -1,5 +1,7 @@
 #include "workerthread.h"
 #include "Common.h" // 공통 헤더 파일 포함
+#include "Item.h"
+#include "ItemManager.h"
 
 
 // 전역 변수 초기화
@@ -8,7 +10,11 @@ std::atomic<long long> g_client_counter = 0;
 std::unordered_map<long long, SESSION*> g_sessions;
 std::mutex g_session_mutex;
 SOCKET g_listen_socket = INVALID_SOCKET;
-std::atomic<int> g_new_id = 0;
+std::atomic<int> g_new_id = 1;
+
+//Item
+ItemManager g_item_manager;
+
 
 void safe_remove_session(long long id) {
 	SESSION* target = nullptr;
@@ -102,7 +108,6 @@ void SESSION::do_recv() {
 	std::cout << "[서버] " << _id << "번 소켓 수신 대기 시작\n";
 }
 
-
 void SESSION::do_send(void* buff)
 {
 	if (_c_socket == INVALID_SOCKET) return;
@@ -137,24 +142,18 @@ void SESSION::send_player_info_packet()
 	do_send(&p);
 }
 
-void SESSION::broadcast_move_packet() {
-	sc_packet_move p;
-	p.size = sizeof(p);
-	p.type = SC_P_MOVE;
-	p.id = _id;
-	p.position = _position;
-
-	std::vector<SESSION*> alive_sessions;
+void BroadcastToAll(void* pkt, long long exclude_id) {
+	std::vector<SESSION*> sessions;
 	{
 		std::lock_guard<std::mutex> lock(g_session_mutex);
 		for (auto& [id, session] : g_sessions) {
-			if (session->_c_socket != INVALID_SOCKET && id != _id)
-				alive_sessions.push_back(session);
+			if (session->_c_socket != INVALID_SOCKET && id != exclude_id)
+				sessions.push_back(session);
 		}
 	}
 
-	for (SESSION* session : alive_sessions) {
-		session->do_send(&p);
+	for (auto session : sessions) {
+		session->do_send(pkt);
 	}
 }
 
@@ -167,53 +166,43 @@ void SESSION::process_packet(unsigned char* p)
 	{
 		cs_packet_login* packet = reinterpret_cast<cs_packet_login*>(p);
 		_name = packet->name;
-		//_position = packet->position;
-		std::cout << "[서버] 로그인 요청 수신: " << _name << "\n";
-
 		std::cout << "[서버] " << _id << "번 클라이언트 로그인: " << _name << std::endl;
 
 		// 1. 자신의 정보 전송
 		send_player_info_packet();
 
-
-		// 2. 기존 클라이언트들에게 신규 접속 알림
-		sc_packet_enter new_user_pkt;
-		new_user_pkt.size = sizeof(new_user_pkt);
-		new_user_pkt.type = SC_P_ENTER;
-		new_user_pkt.id = _id;
-		//strcpy_s(new_user_pkt.name, sizeof(new_user_pkt.name), _name.c_str()); // 안전한 복사
-		//new_user_pkt.o_type = 0;
-		new_user_pkt.position = _position;
-
-		// 3. 신규 클라이언트에게 기존 유저 정보 전송
+		// 2. 기존 유저 정보 수집
+		std::vector<sc_packet_enter> existing_users;
 		{
 			std::lock_guard<std::mutex> lock(g_session_mutex);
 			for (auto& [ex_id, ex_session] : g_sessions) {
 				if (ex_id == _id) continue;
 
-				// 기존 유저 정보 패킷 생성
-				sc_packet_enter existing_user_pkt;
-				existing_user_pkt.size = sizeof(existing_user_pkt);
-				existing_user_pkt.type = SC_P_ENTER;
-				existing_user_pkt.id = ex_id;
-				//strcpy_s(existing_user_pkt.name, sizeof(existing_user_pkt.name), ex_session->_name.c_str());
-				existing_user_pkt.position = ex_session->_position;
+				sc_packet_enter pkt;
+				pkt.size = sizeof(pkt);
+				pkt.type = SC_P_ENTER;
+				pkt.id = ex_id;
+				pkt.position = ex_session->_position;
+				existing_users.push_back(pkt);
+			}
+		}
 
-				// 신규 클라이언트에 전송
-				do_send(&existing_user_pkt);
-			}
+		// 3. 기존 유저 정보를 신규 클라이언트에 전송
+		for (auto& pkt : existing_users) {
+			do_send(&pkt);
 		}
-		{
-			std::lock_guard<std::mutex> lock(g_session_mutex);
-			for (auto& [ex_id, ex_session] : g_sessions) {
-				if (ex_id != _id) {
-					ex_session->do_send(&new_user_pkt);
-				}
-			}
-		}
+
+		// 4. 신규 유저 정보 브로드캐스트
+		sc_packet_enter new_user_pkt;
+		new_user_pkt.size = sizeof(new_user_pkt);
+		new_user_pkt.type = SC_P_ENTER;
+		new_user_pkt.id = _id;
+		new_user_pkt.position = _position;
+
+		BroadcastToAll(&new_user_pkt, _id); // 자신 제외 전체 전송
+
 		break;
 	}
-
 	case CS_P_MOVE: { // 이부분을 클라이언트랑 이야기 하면서 고쳐봐야 겠음. ( 난 서버에서 계산 해서 보내는것, 클라쪽은 그냥 좌표만 받자라는 생각)
 		cs_packet_move* packet = reinterpret_cast<cs_packet_move*>(p);
 
@@ -228,21 +217,61 @@ void SESSION::process_packet(unsigned char* p)
 		std::cout << "[서버] 브로드캐스트 시작 - 대상 수: " << g_sessions.size() - 1 << "\n";
 
 		// 모든 클라이언트에게 브로드캐스트
-		{
-			std::lock_guard<std::mutex> lock(g_session_mutex);
-			for (auto& [id, session] : g_sessions) {
-				if (id != _id) {
-					session->do_send(&mp);
-					std::cout << "[서버] " << id << "번 전송: (" << mp.position.x << "," << mp.position.y << "," << mp.position.z << ")\n";
-				}
-			}
+		BroadcastToAll(&mp, _id);
+		break;
+	}
+
+	case CS_P_ITEM_PICKUP: 
+	{
+		cs_packet_item_pickup* packet = reinterpret_cast<cs_packet_item_pickup*>(p);
+		HandleItemPickup(packet->item_id);
+		break;
+	}
+	
+	case CS_P_ITEM_MOVE: 
+	{
+		cs_packet_item_move* packet = reinterpret_cast<cs_packet_item_move*>(p);
+		Item* item = g_item_manager.GetItem(packet->item_id);
+		if (item && item->GetHolder() == _id) {
+			item->SetPosition(packet->position);
+
+			// 모든 클라이언트에 위치 업데이트
+			sc_packet_item_move move_pkt;
+			move_pkt.size = sizeof(move_pkt);
+			move_pkt.type = SC_P_ITEM_MOVE;
+			move_pkt.item_id = packet->item_id;
+			move_pkt.position = packet->position;
+			move_pkt.holder_id = _id;
+
+			BroadcastToAll(&move_pkt);
 		}
 		break;
 	}
+
 	default:
 		std::cout << "Error Invalid Packet Type\n";
 		exit(-1);
 	}
+}
+
+// 아이템 획득 처리
+void SESSION::HandleItemPickup(long long item_id) {
+	Item* item = g_item_manager.GetItem(item_id);
+	if (!item || item->GetHolder() != 0) {
+		std::cout << "[서버] " << _id << "번 플레이어 아이템 획득 실패: "
+			<< (item ? "이미 소유중" : "존재하지 않음") << "\n";
+		return;
+	}
+
+	item->SetHolder(_id);
+
+	sc_packet_item_despawn pkt;
+	pkt.size = sizeof(pkt);
+	pkt.type = SC_P_ITEM_DESPAWN;
+	pkt.item_id = item_id;
+
+	BroadcastToAll(&pkt);
+	
 }
 
 void print_error_message(int s_err)
@@ -283,6 +312,27 @@ void do_accept(SOCKET s_socket) {
 	}
 }
 
+// 아이템 생성 처리
+void SpawnItemToAll(long long id, XMFLOAT3 pos, int item_type) {
+	sc_packet_item_spawn pkt;
+	pkt.size = sizeof(pkt);
+	pkt.type = SC_P_ITEM_SPAWN;
+	pkt.item_id = id;
+	pkt.position = pos;
+	pkt.item_type = item_type; // 새 필드 추가
+
+	BroadcastToAll(&pkt); // exclude_id 기본값 0 (모두에게 전송)
+}
+
+void TestSpawnMultipleItems() {
+	for (int i = 0; i < 5; ++i) {
+		XMFLOAT3 pos = { 10.0f + i * 2, 0.0f, 5.0f + i * 3 };
+		int item_type = (i % 3) + 1;
+		long long item_id = 20000 + i;
+		g_item_manager.SpawnItem(item_id, pos, item_type);
+		SpawnItemToAll(item_id, pos, item_type);
+	}
+}
 
 // Worker Thread 핸들러
 void WorkerThread() {
