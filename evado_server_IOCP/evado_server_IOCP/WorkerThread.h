@@ -59,7 +59,7 @@ public:
 	
 };
 
-void BroadcastToAll(void* pkt, long long exclude_id = -1);
+void BroadcastToAll(void* pkt, long long exclude_id);
 void safe_remove_session(long long id);
 void print_error_message(int s_err);
 void do_accept(SOCKET s_socket);

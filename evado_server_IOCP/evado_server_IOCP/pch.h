@@ -13,6 +13,7 @@ using namespace DirectX;
 #define NUM_WORKER_THREADS 4
 #define MAX_USER 5000
 
+#define MAX_BUFFER 8192
 
 constexpr char SC_P_USER_INFO = 1;
 constexpr char SC_P_MOVE = 2;
@@ -65,7 +66,7 @@ struct sc_packet_enter {
 	unsigned char	size;
 	char			type;
 	long long		id;
-	char			name[MAX_ID_LENGTH];
+	//char			name[MAX_ID_LENGTH];
 	//char			o_type;
 	XMFLOAT3		position;
 };

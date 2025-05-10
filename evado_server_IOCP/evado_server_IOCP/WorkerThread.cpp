@@ -10,10 +10,11 @@ std::atomic<long long> g_client_counter = 0;
 std::unordered_map<long long, SESSION*> g_sessions;
 std::mutex g_session_mutex;
 SOCKET g_listen_socket = INVALID_SOCKET;
-std::atomic<int> g_new_id = 1;
+std::atomic<int> g_new_id = 0;
 
 //Item
 ItemManager g_item_manager;
+
 
 
 void safe_remove_session(long long id) {
@@ -65,6 +66,7 @@ SESSION::SESSION(long long session_id, SOCKET s) : _id(session_id), _c_socket(s)
 		g_sessions[_id] = this;
 		std::cout << "[서버] 세션 추가 완료: ID=" << _id << ", 현재 접속자 수: " << g_sessions.size() << "\n";
 	}
+	_remained = 0;
 	do_recv();
 }
 
@@ -72,15 +74,10 @@ SESSION::SESSION(long long session_id, SOCKET s) : _id(session_id), _c_socket(s)
 SESSION::~SESSION()
 {
 	if (_c_socket != INVALID_SOCKET) {
-		LINGER linger_opt = { 1, 0 };
-		setsockopt(_c_socket, SOL_SOCKET, SO_LINGER, (char*)&linger_opt, sizeof(linger_opt));
+		shutdown(_c_socket, SD_BOTH);  //  Graceful shutdown
 		closesocket(_c_socket);
+		_c_socket = INVALID_SOCKET;    //  핸들 무효화
 	}
-
-	sc_packet_leave lp{};
-	lp.size = sizeof(lp);
-	lp.type = SC_P_LEAVE;
-	lp.id = _id;
 
 }
 
@@ -142,7 +139,7 @@ void SESSION::send_player_info_packet()
 	do_send(&p);
 }
 
-void BroadcastToAll(void* pkt, long long exclude_id) {
+void BroadcastToAll(void* pkt, long long exclude_id = -1) {
 	std::vector<SESSION*> sessions;
 	{
 		std::lock_guard<std::mutex> lock(g_session_mutex);
@@ -171,7 +168,7 @@ void SESSION::process_packet(unsigned char* p)
 		// 1. 자신의 정보 전송
 		send_player_info_packet();
 
-		// 2. 기존 유저 정보 수집
+		// 2. 기존 유저 정보 전송
 		std::vector<sc_packet_enter> existing_users;
 		{
 			std::lock_guard<std::mutex> lock(g_session_mutex);
@@ -186,13 +183,23 @@ void SESSION::process_packet(unsigned char* p)
 				existing_users.push_back(pkt);
 			}
 		}
-
-		// 3. 기존 유저 정보를 신규 클라이언트에 전송
 		for (auto& pkt : existing_users) {
 			do_send(&pkt);
 		}
 
-		// 4. 신규 유저 정보 브로드캐스트
+		// 2. 기존 아이템 정보 전송
+		auto items = g_item_manager.GetAllItems();
+		for (auto* item : items) {
+			sc_packet_item_spawn pkt;
+			pkt.size = sizeof(pkt);
+			pkt.type = SC_P_ITEM_SPAWN;
+			pkt.item_id = item->GetID();
+			pkt.position = item->GetPosition();
+			pkt.item_type = item->GetType();
+			do_send(&pkt);
+		}
+
+		// 3. 신규 유저 정보 브로드캐스트
 		sc_packet_enter new_user_pkt;
 		new_user_pkt.size = sizeof(new_user_pkt);
 		new_user_pkt.type = SC_P_ENTER;
@@ -205,12 +212,9 @@ void SESSION::process_packet(unsigned char* p)
 	}
 	case CS_P_MOVE: { // 이부분을 클라이언트랑 이야기 하면서 고쳐봐야 겠음. ( 난 서버에서 계산 해서 보내는것, 클라쪽은 그냥 좌표만 받자라는 생각)
 		cs_packet_move* packet = reinterpret_cast<cs_packet_move*>(p);
-
 		_position = packet->position;
 
-
 		std::cout << "[서버] " << _id << "번 클라이언트 위치 수신: (" << _position.x << ", " << _position.y << ", " << _position.z << ")\n";
-
 
 		sc_packet_move mp;
 		mp.size = sizeof(mp);
@@ -219,7 +223,6 @@ void SESSION::process_packet(unsigned char* p)
 		mp.position = _position;
 		std::cout << "[서버] 브로드캐스트 시작 - 대상 수: " << g_sessions.size() - 1 << "\n";
 
-		// 모든 클라이언트에게 브로드캐스트
 		BroadcastToAll(&mp, _id);
 		break;
 	}
@@ -398,6 +401,7 @@ void WorkerThread() {
 			delete eo;
 			break;
 		case IO_RECV:
+		{
 			// 1. 뮤텍스 락으로 세션 검색 (스레드 세이프)
 			SESSION* pUser = nullptr;
 			{
@@ -413,14 +417,7 @@ void WorkerThread() {
 
 			if (FALSE == ret || 0 == io_size) {
 				std::cout << "[서버] " << key << "번 클라이언트 연결 종료\n";
-
-				std::lock_guard<std::mutex> lock(g_session_mutex);
-				if (g_sessions.count(key)) {
-					SESSION* session = g_sessions[key];
-					closesocket(session->_c_socket);  // 소켓 닫기
-					delete session;                   // 세션 객체 메모리 해제
-					g_sessions.erase(key);            // 맵에서 제거
-				}
+				safe_remove_session(key);
 				delete eo;  // EXP_OVER 객체 정리
 				continue;
 			}
@@ -455,6 +452,7 @@ void WorkerThread() {
 				user._remained = 0;
 			pUser->do_recv();
 			break;
+		}
 		}
 	}
 }
