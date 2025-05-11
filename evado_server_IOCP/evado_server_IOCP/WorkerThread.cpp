@@ -128,6 +128,7 @@ void SESSION::send_player_info_packet()
 	p.position = _position;
 	p.look = _look;
 	p.right = _right;
+	p.animState = _animState;
 	//p.hp = 100;
 	do_send(&p);
 }
@@ -143,7 +144,9 @@ void BroadcastToAll(void* pkt, long long exclude_id = -1) {
 	}
 
 	for (auto session : sessions) {
-		session->do_send(pkt);
+		auto packet_copy = new char[256]; // 적절한 크기 할당
+		memcpy(packet_copy, pkt, reinterpret_cast<unsigned char*>(pkt)[0]);
+		session->do_send(packet_copy);
 	}
 }
 
@@ -175,6 +178,7 @@ void SESSION::process_packet(unsigned char* p)
 				pkt.position = ex_session->_position;
 				pkt.look = ex_session->_look;
 				pkt.right = ex_session->_right;
+				pkt.animState = ex_session->GetAnimationState();
 				existing_users.push_back(pkt);
 			}
 		}
@@ -202,6 +206,7 @@ void SESSION::process_packet(unsigned char* p)
 		new_user_pkt.position = _position;
 		new_user_pkt.look = _look;
 		new_user_pkt.right = _right;
+		new_user_pkt.animState = _animState;
 
 		BroadcastToAll(&new_user_pkt, _id); // 자신 제외 전체 전송
 
@@ -212,10 +217,11 @@ void SESSION::process_packet(unsigned char* p)
 		_position = packet->position;
 		_look = packet->look;
 		_right = packet->right;
+		_animState = packet->animState;
 
 		std::cout << "[서버] " << _id << "번 클라이언트 위치 수신: (" << _position.x << ", " << _position.y << ", " << _position.z << ", "
 			<< _look.x << ", " << _look.y << ", " << _look.z << ", "
-			<< _right.x << ", " << _right.y << ", " << _right.z << ")\n";
+			<< _right.x << ", " << _right.y << ", " << _right.z << ", " << static_cast<int>(_animState) << ")\n";
 
 		sc_packet_move mp;
 		mp.size = sizeof(mp);
@@ -224,6 +230,7 @@ void SESSION::process_packet(unsigned char* p)
 		mp.position = _position;
 		mp.look = _look;
 		mp.right = _right;
+		mp.animState = _animState;
 		std::cout << "[서버] 브로드캐스트 시작 - 대상 수: " << g_sessions.size() - 1 << "\n";
 
 		BroadcastToAll(&mp, _id);

@@ -43,6 +43,7 @@ public:
 	XMFLOAT3		_position;
 	XMFLOAT3		_look;
 	XMFLOAT3		_right;
+	uint8_t			_animState;
 	std::string		_name;
 	std::atomic<bool> _is_sending{ false };
 
@@ -56,6 +57,9 @@ public:
 	void send_player_info_packet();	
 	void process_packet(unsigned char* p);
 	void HandleItemPickup(long long item_id);
+
+	void SetAnimationState(uint8_t state) { _animState = state; }
+	uint8_t GetAnimationState() const { return _animState; }
 	
 };
 
