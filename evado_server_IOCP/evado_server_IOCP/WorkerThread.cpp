@@ -26,14 +26,13 @@ void safe_remove_session(long long id) {
 		auto it = g_sessions.find(id);
 		if (it == g_sessions.end()) return;
 		target = it->second;
-		g_sessions.erase(it); // 맵에서 먼저 제거
+		g_sessions.erase(it);
 	}
 
-	// 뮤텍스 밖에서 소켓 닫기 및 메모리 해제
 	if (target) {
 		if (target->_c_socket != INVALID_SOCKET) {
+			shutdown(target->_c_socket, SD_BOTH); // 양방향 연결 종료
 			closesocket(target->_c_socket);
-			target->_c_socket = INVALID_SOCKET;
 		}
 		delete target;
 	}
@@ -135,7 +134,9 @@ void SESSION::send_player_info_packet()
 	do_send(&p);
 }
 
-void BroadcastToAll(void* pkt, long long exclude_id = -1) {
+void BroadcastToAll(void* pkt, long long exclude_id = -1) 
+{
+	unsigned char packet_size = reinterpret_cast<unsigned char*>(pkt)[0];
 	std::vector<SESSION*> sessions;
 	{
 		std::lock_guard<std::mutex> lock(g_session_mutex);
@@ -146,8 +147,8 @@ void BroadcastToAll(void* pkt, long long exclude_id = -1) {
 	}
 
 	for (auto session : sessions) {
-		auto packet_copy = new char[256]; // 적절한 크기 할당
-		memcpy(packet_copy, pkt, reinterpret_cast<unsigned char*>(pkt)[0]);
+		auto packet_copy = new char[packet_size]; // 동적 크기 할당
+		memcpy(packet_copy, pkt, packet_size);
 		session->do_send(packet_copy);
 	}
 }
@@ -511,7 +512,7 @@ void WorkerThread() {
 				memcpy(p, eo->_buffer, user._remained);
 			}
 			else
-				user._remained = 0;
+			user._remained = 0;
 			pUser->do_recv();
 			break;
 		}
