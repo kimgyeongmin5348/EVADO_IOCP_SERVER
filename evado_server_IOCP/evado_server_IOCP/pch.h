@@ -49,8 +49,8 @@ struct sc_packet_user_info {
 	long long		id;
 	//char			name[MAX_ID_LENGTH];  //교수님 코드엔 이게 없음 한번 없에고 해보자...
 	XMFLOAT3		position;
-	//XMFLOAT3		look;
-	//XMFLOAT3		right;
+	XMFLOAT3		look;
+	XMFLOAT3		right;
 	//short			hp;
 };
 
@@ -59,7 +59,9 @@ struct sc_packet_move {
 	char			type;
 	long long		id;
 	//char			name[MAX_ID_LENGTH];
-	XMFLOAT3		position; 
+	XMFLOAT3		position;
+	XMFLOAT3		look;
+	XMFLOAT3		right;
 };
 
 struct sc_packet_enter {
@@ -69,6 +71,8 @@ struct sc_packet_enter {
 	//char			name[MAX_ID_LENGTH];
 	//char			o_type;
 	XMFLOAT3		position;
+	XMFLOAT3		look;
+	XMFLOAT3		right;
 };
 
 struct sc_packet_leave {
@@ -94,6 +98,8 @@ struct cs_packet_move {
 	unsigned char	size; 
 	char			type;
 	XMFLOAT3		position; 
+	XMFLOAT3		look;
+	XMFLOAT3		right;
 };
 
 // 아이템

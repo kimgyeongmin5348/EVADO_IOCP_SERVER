@@ -41,8 +41,8 @@ public:
 	unsigned char	_remained;
 
 	XMFLOAT3		_position;
-	//XMFLOAT3		_look;
-	//XMFLOAT3		_right;
+	XMFLOAT3		_look;
+	XMFLOAT3		_right;
 	std::string		_name;
 	std::atomic<bool> _is_sending{ false };
 

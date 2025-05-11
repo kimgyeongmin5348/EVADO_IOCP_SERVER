@@ -74,9 +74,9 @@ SESSION::SESSION(long long session_id, SOCKET s) : _id(session_id), _c_socket(s)
 SESSION::~SESSION()
 {
 	if (_c_socket != INVALID_SOCKET) {
-		shutdown(_c_socket, SD_BOTH);  //  Graceful shutdown
+		shutdown(_c_socket, SD_SEND);
 		closesocket(_c_socket);
-		_c_socket = INVALID_SOCKET;    //  핸들 무효화
+		_c_socket = INVALID_SOCKET;
 	}
 
 }
@@ -92,14 +92,8 @@ void SESSION::do_recv() {
 		auto err_no = WSAGetLastError();
 		if (WSA_IO_PENDING != err_no) {
 			std::cout << "[오류] " << _id << "번 클라이언트 연결 종료. 코드: " << err_no << "\n";
-			{
-				std::lock_guard<std::mutex> lock(g_session_mutex);
-				g_sessions.erase(_id);
-			}
-			closesocket(_c_socket);
-			_c_socket = INVALID_SOCKET;
-			delete this;
-			return;
+			safe_remove_session(_id); // 직접 삭제 대신 안전 제거 함수 호출
+			return; // delete this 제거!
 		}
 	}
 	std::cout << "[서버] " << _id << "번 소켓 수신 대기 시작\n";
@@ -131,10 +125,9 @@ void SESSION::send_player_info_packet()
 	p.size = sizeof(p);
 	p.type = SC_P_USER_INFO;
 	p.id = _id;
-	//strncpy_s(p.name, _name.c_str(), _TRUNCATE);
 	p.position = _position;
-	//p.look = _look;
-	//p.right = _right;
+	p.look = _look;
+	p.right = _right;
 	//p.hp = 100;
 	do_send(&p);
 }
@@ -180,6 +173,8 @@ void SESSION::process_packet(unsigned char* p)
 				pkt.type = SC_P_ENTER;
 				pkt.id = ex_id;
 				pkt.position = ex_session->_position;
+				pkt.look = ex_session->_look;
+				pkt.right = ex_session->_right;
 				existing_users.push_back(pkt);
 			}
 		}
@@ -205,6 +200,8 @@ void SESSION::process_packet(unsigned char* p)
 		new_user_pkt.type = SC_P_ENTER;
 		new_user_pkt.id = _id;
 		new_user_pkt.position = _position;
+		new_user_pkt.look = _look;
+		new_user_pkt.right = _right;
 
 		BroadcastToAll(&new_user_pkt, _id); // 자신 제외 전체 전송
 
@@ -213,14 +210,20 @@ void SESSION::process_packet(unsigned char* p)
 	case CS_P_MOVE: { // 이부분을 클라이언트랑 이야기 하면서 고쳐봐야 겠음. ( 난 서버에서 계산 해서 보내는것, 클라쪽은 그냥 좌표만 받자라는 생각)
 		cs_packet_move* packet = reinterpret_cast<cs_packet_move*>(p);
 		_position = packet->position;
+		_look = packet->look;
+		_right = packet->right;
 
-		std::cout << "[서버] " << _id << "번 클라이언트 위치 수신: (" << _position.x << ", " << _position.y << ", " << _position.z << ")\n";
+		std::cout << "[서버] " << _id << "번 클라이언트 위치 수신: (" << _position.x << ", " << _position.y << ", " << _position.z << ", "
+			<< _look.x << ", " << _look.y << ", " << _look.z << ", "
+			<< _right.x << ", " << _right.y << ", " << _right.z << ")\n";
 
 		sc_packet_move mp;
 		mp.size = sizeof(mp);
 		mp.type = SC_P_MOVE;
 		mp.id = _id;
 		mp.position = _position;
+		mp.look = _look;
+		mp.right = _right;
 		std::cout << "[서버] 브로드캐스트 시작 - 대상 수: " << g_sessions.size() - 1 << "\n";
 
 		BroadcastToAll(&mp, _id);
@@ -255,8 +258,9 @@ void SESSION::process_packet(unsigned char* p)
 	}
 
 	default:
-		std::cout << "Error Invalid Packet Type\n";
-		exit(-1);
+		std::cout << "[경고] 잘못된 패킷 타입: " << (int)packet_type << "\n";
+		safe_remove_session(_id); // 연결 종료
+		break;
 	}
 }
 
@@ -350,7 +354,9 @@ void WorkerThread() {
 		EXP_OVER* eo = reinterpret_cast<EXP_OVER*>(o);
 
 		if (FALSE == ret || (0 == io_size && (eo->_io_op == IO_RECV || eo->_io_op == IO_SEND))) {
-			safe_remove_session(key); // 연결 종료 시 안전 제거
+			if (eo->_io_op == IO_RECV) {
+				safe_remove_session(key);
+			}
 			delete eo;
 			continue;
 		}
