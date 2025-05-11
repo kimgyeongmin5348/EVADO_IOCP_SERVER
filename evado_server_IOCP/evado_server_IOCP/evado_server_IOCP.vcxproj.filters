@@ -48,6 +48,9 @@
     <ClCompile Include="ItemManager.cpp">
       <Filter>Contents\Item</Filter>
     </ClCompile>
+    <ClCompile Include="MonsterManager.cpp">
+      <Filter>Contents\NPC</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="WorkerThread.h">
@@ -67,6 +70,9 @@
     </ClInclude>
     <ClInclude Include="ItemManager.h">
       <Filter>Contents\Item</Filter>
+    </ClInclude>
+    <ClInclude Include="MonsterManager.h">
+      <Filter>Contents\NPC</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

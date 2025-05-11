@@ -2,6 +2,8 @@
 #include "Common.h" // 공통 헤더 파일 포함
 #include "Item.h"
 #include "ItemManager.h"
+#include "Monster.h"
+#include "MonsterManager.h"
 
 
 // 전역 변수 초기화
@@ -207,9 +209,20 @@ void SESSION::process_packet(unsigned char* p)
 		new_user_pkt.look = _look;
 		new_user_pkt.right = _right;
 		new_user_pkt.animState = _animState;
-
 		BroadcastToAll(&new_user_pkt, _id); // 자신 제외 전체 전송
 
+		// 4. Monster 정보 전송
+		auto monsters = MonsterManager::GetInstance().GetAllMonsters();
+		for (auto& [monster_id, monster] : monsters) {
+			sc_packet_monster_spawn pkt;
+			pkt.size = sizeof(pkt);
+			pkt.type = SC_P_MONSTER_SPAWN;
+			pkt.monsterID = monster->GetSpiderID();
+			pkt.position = monster->GetSpiderPosition();
+			pkt.state = monster->GetSpiderAnimaitionState();
+			do_send(&pkt); // 새 클라이언트에게만 전송
+		}
+	
 		break;
 	}
 	case CS_P_MOVE: { 
@@ -219,9 +232,9 @@ void SESSION::process_packet(unsigned char* p)
 		_right = packet->right;
 		_animState = packet->animState;
 
-		std::cout << "[서버] " << _id << "번 클라이언트 위치 수신: (" << _position.x << ", " << _position.y << ", " << _position.z << ", "
-			<< _look.x << ", " << _look.y << ", " << _look.z << ", "
-			<< _right.x << ", " << _right.y << ", " << _right.z << ", " << static_cast<int>(_animState) << ")\n";
+		//std::cout << "[서버] " << _id << "번 클라이언트 위치 수신: (" << _position.x << ", " << _position.y << ", " << _position.z << ", "
+		//	<< _look.x << ", " << _look.y << ", " << _look.z << ", "
+		//	<< _right.x << ", " << _right.y << ", " << _right.z << ", " << static_cast<int>(_animState) << ")\n";
 
 		sc_packet_move mp;
 		mp.size = sizeof(mp);
@@ -231,6 +244,7 @@ void SESSION::process_packet(unsigned char* p)
 		mp.look = _look;
 		mp.right = _right;
 		mp.animState = _animState;
+
 		std::cout << "[서버] " << _id << "번 클라이언트 위치 수신: (" << _position.x << ", " << _position.y << ", " << _position.z << ", "
 			<< _look.x << ", " << _look.y << ", " << _look.z << ", "
 			<< _right.x << ", " << _right.y << ", " << _right.z << ", " << static_cast<int>(_animState) << ")\n";
@@ -352,6 +366,38 @@ void TestSpawnMultipleItems() {
 		g_item_manager.SpawnItem(item_id, pos, item_type);
 		SpawnItemToAll(item_id, pos, item_type);
 	}
+}
+
+// 몬스터 생성
+void GameLoopThread() {
+	auto last_time = std::chrono::steady_clock::now();
+	while (true) {
+		auto now = std::chrono::steady_clock::now();
+		float delta_time =
+			std::chrono::duration_cast<std::chrono::milliseconds>(now - last_time).count() / 1000.0f;
+		last_time = now;
+
+		// 플레이어 위치 수집
+		std::vector<XMFLOAT3> playerPositions;
+		{
+			std::lock_guard<std::mutex> lock(g_session_mutex);
+			for (auto& [id, session] : g_sessions) {
+				playerPositions.push_back(session->_position);
+			}
+		}
+
+		// 몬스터 업데이트
+		MonsterManager::GetInstance().UpdateAllMonsters(delta_time, playerPositions);
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	}
+}
+
+void InitializeMonsters() {
+	MonsterManager::GetInstance().SpawnMonster(10001, XMFLOAT3{ 10.f, 0.f, 10.f },
+		static_cast<uint8_t>(MonsterAnimationState::IDLE));
+	MonsterManager::GetInstance().SpawnMonster(10002, XMFLOAT3{ 0.f, 0.f, 0.f },
+		static_cast<uint8_t>(MonsterAnimationState::IDLE));
 }
 
 // Worker Thread 핸들러

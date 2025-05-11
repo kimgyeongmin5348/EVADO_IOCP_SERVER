@@ -69,4 +69,6 @@ void print_error_message(int s_err);
 void do_accept(SOCKET s_socket);
 void WorkerThread();
 
+void GameLoopThread();
 void TestSpawnMultipleItems();
+void InitializeMonsters();

@@ -40,6 +40,10 @@ constexpr char MOVE_DOWN = 2;
 constexpr char MOVE_LEFT = 3;
 constexpr char MOVE_RIGHT = 4;
 
+constexpr char SC_P_MONSTER_SPAWN = 14;
+constexpr char SC_P_MONSTER_MOVE = 15;
+constexpr char SC_P_MONSTER_DIE = 16;
+
 
 #pragma pack (push, 1)
 
@@ -65,51 +69,51 @@ struct sc_packet_user_info {
 };
 
 struct sc_packet_move {
-	unsigned char	size;
-	char			type;
-	long long		id;
-	XMFLOAT3		position;
-	XMFLOAT3		look;
-	XMFLOAT3		right;
-	uint8_t			animState;
+	unsigned char		size;
+	char				type;
+	long long			id;
+	XMFLOAT3			position;
+	XMFLOAT3			look;
+	XMFLOAT3			right;
+	uint8_t				animState;
 };
 
 struct sc_packet_enter {
-	unsigned char	size;
-	char			type;
-	long long		id;
-	XMFLOAT3		position;
-	XMFLOAT3		look;
-	XMFLOAT3		right;
-	uint8_t			animState;
+	unsigned char		size;
+	char				type;
+	long long			id;
+	XMFLOAT3			position;
+	XMFLOAT3			look;
+	XMFLOAT3			right;
+	uint8_t				animState;
 };
 
 struct sc_packet_leave {
-	unsigned char	size;
-	char			type;
-	long long		id;
+	unsigned char		size;
+	char				type;
+	long long			id;
 };
 
 struct cs_packet_login {
-	unsigned char	size;
-	char			type;
-	//XMFLOAT3		position;
-	char			name[MAX_ID_LENGTH];
+	unsigned char		size;
+	char				type;
+	//XMFLOAT3			position;
+	char				name[MAX_ID_LENGTH];
 
 };
 
 struct sc_packet_login_fail {
-	unsigned char	size;
-	char			type;
+	unsigned char		size;
+	char				type;
 };
 
 struct cs_packet_move {
-	unsigned char	size;
-	char			type;
-	XMFLOAT3		position;
-	XMFLOAT3		look;
-	XMFLOAT3		right;
-	uint8_t			animState;
+	unsigned char		size;
+	char				type;
+	XMFLOAT3			position;
+	XMFLOAT3			look;
+	XMFLOAT3			right;
+	uint8_t				animState;
 };
 
 // 아이템
@@ -122,39 +126,65 @@ enum ITEM_TYPE : int {
 };
 
 struct sc_packet_item_spawn {
-	unsigned char	size;
-	char			type;
-	long long		item_id;
-	XMFLOAT3		position;
-	int				item_type;
+	unsigned char		size;
+	char				type;
+	long long			item_id;
+	XMFLOAT3			position;
+	int					item_type;
 };
 
 struct sc_packet_item_despawn {
-	unsigned char	size;
-	char			type;
-	long long		item_id;
+	unsigned char		size;
+	char				type;
+	long long			item_id;
 };
 
 struct cs_packet_item_pickup {
-	unsigned char	size;
-	char			type;
-	long long		item_id;
-	long long		player_id;
+	unsigned char		size;
+	char				type;
+	long long			item_id;
+	long long			player_id;
 };
 
 struct cs_packet_item_move {
-	unsigned char	size;
-	char			type;
-	long long		item_id;
-	XMFLOAT3		position;
-};
+	unsigned char		size;
+	char				type;
+	long long			item_id;
+	XMFLOAT3			position;
+};	
 
 struct sc_packet_item_move {
-	unsigned char	size;
-	char			type;
-	long long		item_id;
-	XMFLOAT3		position;
-	long long		holder_id; // 소유자 ID (0 = 지면에 있음)
+	unsigned char		size;
+	char				type;
+	long long			item_id;
+	XMFLOAT3			position;
+	long long			holder_id; // 소유자 ID (0 = 지면에 있음)
+};
+
+// Monster
+enum class MonsterAnimationState : uint8_t
+{
+	IDLE,
+	WALK,
+	ATTACK
+};
+
+struct sc_packet_monster_spawn
+{
+	unsigned char		size;
+	char				type;
+	int64_t				monsterID;	
+	XMFLOAT3			position;
+	uint8_t				state;
+};
+
+struct sc_packet_monster_move
+{
+	unsigned char		size;
+	char				type;
+	int64_t				monsterID;	
+	XMFLOAT3			position;
+	uint8_t				state;
 };
 
 #pragma pack (pop)
