@@ -31,6 +31,9 @@
     <Filter Include="Contents\Item">
       <UniqueIdentifier>{a008baf7-8168-4dfd-b767-963b97600b87}</UniqueIdentifier>
     </Filter>
+    <Filter Include="DB">
+      <UniqueIdentifier>{2f9acc6b-aab2-4c05-965e-7f9e35162f1c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WorkerThread.cpp">
@@ -50,6 +53,9 @@
     </ClCompile>
     <ClCompile Include="MonsterManager.cpp">
       <Filter>Contents\NPC</Filter>
+    </ClCompile>
+    <ClCompile Include="DBConnet.cpp">
+      <Filter>DB</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -73,6 +79,9 @@
     </ClInclude>
     <ClInclude Include="MonsterManager.h">
       <Filter>Contents\NPC</Filter>
+    </ClInclude>
+    <ClInclude Include="DBConnect.h">
+      <Filter>DB</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -48,7 +48,7 @@ public:
 	std::atomic<bool> _is_sending{ false };
 
 public:
-	SESSION();
+	SESSION() = delete;
 	SESSION(long long session_id, SOCKET s);
 	~SESSION();
 

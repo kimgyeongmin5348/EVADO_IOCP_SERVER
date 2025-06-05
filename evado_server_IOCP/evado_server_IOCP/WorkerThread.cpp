@@ -29,13 +29,6 @@ void safe_remove_session(long long id) {
 		g_sessions.erase(it);
 	}
 
-	if (target) {
-		if (target->_c_socket != INVALID_SOCKET) {
-			shutdown(target->_c_socket, SD_BOTH); // 양방향 연결 종료
-			closesocket(target->_c_socket);
-		}
-		delete target;
-	}
 }
 
 // EXP_OVER 구현
@@ -46,11 +39,7 @@ EXP_OVER::EXP_OVER(IO_OP op) : _io_op(op)
 	_wsabuf[0].len = sizeof(_buffer);
 }
 
-SESSION::SESSION()
-{
-	std::cout << "DEFAULT SESSION CONSTRUCTOR CALLED!!\n";
-	exit(-1);
-}
+//SESSION::SESSION(){}
 
 // SESSION 구현
 SESSION::SESSION(long long session_id, SOCKET s) : _id(session_id), _c_socket(s), _recv_over(IO_RECV)
@@ -75,11 +64,12 @@ SESSION::SESSION(long long session_id, SOCKET s) : _id(session_id), _c_socket(s)
 SESSION::~SESSION()
 {
 	if (_c_socket != INVALID_SOCKET) {
-		shutdown(_c_socket, SD_SEND);
+		CancelIoEx(reinterpret_cast<HANDLE>(_c_socket), NULL);
+		//shutdown(_c_socket, SD_SEND);
 		closesocket(_c_socket);
 		_c_socket = INVALID_SOCKET;
 	}
-
+	//g_item_manager.ReleaseItemsByHolder(_id); // 아이템 정리
 }
 
 void SESSION::do_recv() {
@@ -94,7 +84,7 @@ void SESSION::do_recv() {
 		if (WSA_IO_PENDING != err_no) {
 			std::cout << "[오류] " << _id << "번 클라이언트 연결 종료. 코드: " << err_no << "\n";
 			safe_remove_session(_id); // 직접 삭제 대신 안전 제거 함수 호출
-			return; // delete this 제거!
+			return;
 		}
 	}
 	std::cout << "[서버] " << _id << "번 소켓 수신 대기 시작\n";
@@ -232,7 +222,7 @@ void SESSION::process_packet(unsigned char* p)
 		_look = packet->look;
 		_right = packet->right;
 		_animState = packet->animState;
-
+		
 		//std::cout << "[서버] " << _id << "번 클라이언트 위치 수신: (" << _position.x << ", " << _position.y << ", " << _position.z << ", "
 		//	<< _look.x << ", " << _look.y << ", " << _look.z << ", "
 		//	<< _right.x << ", " << _right.y << ", " << _right.z << ", " << static_cast<int>(_animState) << ")\n";
@@ -285,7 +275,7 @@ void SESSION::process_packet(unsigned char* p)
 	default:
 		std::cout << "[경고] 잘못된 패킷 타입: " << (int)packet_type << "\n";
 		safe_remove_session(_id); // 연결 종료
-		break;
+		return;
 	}
 }
 
