@@ -31,6 +31,7 @@ public:
 
 };
 
+void safe_remove_session(long long id);
 
 class SESSION {
 public:
@@ -49,8 +50,36 @@ public:
 
 public:
 	SESSION() = delete;
-	SESSION(long long session_id, SOCKET s);
-	~SESSION();
+
+	SESSION(long long session_id, SOCKET s) {
+
+		// 소켓 옵션 추가 (Keep-Alive 설정)
+		int opt = 1;
+		setsockopt(_c_socket, SOL_SOCKET, SO_KEEPALIVE, (char*)&opt, sizeof(opt));
+
+		// Nagle 알고리즘 비활성화 (실시간 통신 필수)
+		setsockopt(_c_socket, IPPROTO_TCP, TCP_NODELAY, (char*)&opt, sizeof(opt));
+
+		{
+			std::lock_guard<std::mutex> lock(g_session_mutex);
+			g_sessions[_id] = this;
+			std::cout << "[서버] 세션 추가 완료: ID=" << _id << ", 현재 접속자 수: " << g_sessions.size() << "\n";
+		}
+		_remained = 0;
+		do_recv();
+
+	};
+	~SESSION() 
+	{
+
+		if (_c_socket != INVALID_SOCKET) {
+			CancelIoEx(reinterpret_cast<HANDLE>(_c_socket), NULL);
+			//shutdown(_c_socket, SD_SEND);
+			closesocket(_c_socket);
+			_c_socket = INVALID_SOCKET;
+		}
+	
+	};
 
 	void do_recv();
 	void do_send(void* buff);

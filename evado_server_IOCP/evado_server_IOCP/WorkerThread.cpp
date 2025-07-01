@@ -42,35 +42,35 @@ EXP_OVER::EXP_OVER(IO_OP op) : _io_op(op)
 //SESSION::SESSION(){}
 
 // SESSION 구현
-SESSION::SESSION(long long session_id, SOCKET s) : _id(session_id), _c_socket(s), _recv_over(IO_RECV)
-{
-	// 소켓 옵션 추가 (Keep-Alive 설정)
-	int opt = 1;
-	setsockopt(_c_socket, SOL_SOCKET, SO_KEEPALIVE, (char*)&opt, sizeof(opt));
-
-	// Nagle 알고리즘 비활성화 (실시간 통신 필수)
-	setsockopt(_c_socket, IPPROTO_TCP, TCP_NODELAY, (char*)&opt, sizeof(opt));
-
-	{
-		std::lock_guard<std::mutex> lock(g_session_mutex);
-		g_sessions[_id] = this;
-		std::cout << "[서버] 세션 추가 완료: ID=" << _id << ", 현재 접속자 수: " << g_sessions.size() << "\n";
-	}
-	_remained = 0;
-	do_recv();
-}
+//SESSION::SESSION(long long session_id, SOCKET s) : _id(session_id), _c_socket(s), _recv_over(IO_RECV)
+//{
+//	// 소켓 옵션 추가 (Keep-Alive 설정)
+//	int opt = 1;
+//	setsockopt(_c_socket, SOL_SOCKET, SO_KEEPALIVE, (char*)&opt, sizeof(opt));
+//
+//	// Nagle 알고리즘 비활성화 (실시간 통신 필수)
+//	setsockopt(_c_socket, IPPROTO_TCP, TCP_NODELAY, (char*)&opt, sizeof(opt));
+//
+//	{
+//		std::lock_guard<std::mutex> lock(g_session_mutex);
+//		g_sessions[_id] = this;
+//		std::cout << "[서버] 세션 추가 완료: ID=" << _id << ", 현재 접속자 수: " << g_sessions.size() << "\n";
+//	}
+//	_remained = 0;
+//	do_recv();
+//}
 
 // leave 관련 구현
-SESSION::~SESSION()
-{
-	if (_c_socket != INVALID_SOCKET) {
-		CancelIoEx(reinterpret_cast<HANDLE>(_c_socket), NULL);
-		//shutdown(_c_socket, SD_SEND);
-		closesocket(_c_socket);
-		_c_socket = INVALID_SOCKET;
-	}
-	//g_item_manager.ReleaseItemsByHolder(_id); // 아이템 정리
-}
+//SESSION::~SESSION()
+//{
+//	if (_c_socket != INVALID_SOCKET) {
+//		CancelIoEx(reinterpret_cast<HANDLE>(_c_socket), NULL);
+//		//shutdown(_c_socket, SD_SEND);
+//		closesocket(_c_socket);
+//		_c_socket = INVALID_SOCKET;
+//	}
+//	//g_item_manager.ReleaseItemsByHolder(_id); // 아이템 정리
+//}
 
 void SESSION::do_recv() {
 	DWORD recv_flag = 0;
