@@ -68,7 +68,16 @@ std::unordered_map<int64_t, Spider*> MonsterManager::GetAllMonsters() {
     return _monsters;
 }
 
-void MonsterManager::UpdateAllMonsters(float deltaTime, const std::vector<XMFLOAT3>& playerPositions) {
+void MonsterManager::UpdateAllMonsters(float deltaTime) {
+    
+    std::vector<XMFLOAT3> playerPositions;
+    {
+        std::lock_guard<std::mutex> lock(g_session_mutex);
+        for (const auto& pair : g_sessions) {
+            playerPositions.push_back(pair.second->_position);
+        }
+    }
+    
     std::lock_guard<std::mutex> lock(_mutex);
 
     for (auto& pair : _monsters) {
