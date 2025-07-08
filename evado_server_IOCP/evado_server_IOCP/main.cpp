@@ -37,14 +37,20 @@ int main()
 	TestSpawnMultipleItems(); // 아이템 생성
 	InitializeMonsters(); // 몬스터 생성
 
+	std::thread game_loop_thread(GameLoopThread);
+
 	// 4. 워커 스레드 생성 및 메인 스레드 대기
 	std::cout << "서버 시작" << std::endl;
 	auto num_threads = (std::min)(8u, std::thread::hardware_concurrency());
 	std::vector<std::thread> workers;
+
 	for (unsigned int i = 0; i < num_threads; ++i)
 		workers.emplace_back(WorkerThread);
 	for (auto& w : workers)
 		w.join();
+
+	// 게임루프 쓰레드
+	game_loop_thread.join();
 
 	closesocket(g_listen_socket);
 	WSACleanup();

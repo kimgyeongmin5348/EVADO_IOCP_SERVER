@@ -378,7 +378,7 @@ void GameLoopThread() {
 		}
 
 		// 몬스터 업데이트
-		MonsterManager::GetInstance().UpdateAllMonsters(delta_time);
+		MonsterManager::GetInstance().UpdateAllMonsters(delta_time, playerPositions);
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
