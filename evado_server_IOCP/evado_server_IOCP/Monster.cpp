@@ -31,7 +31,8 @@ void Spider::Update(float fTimeElapsed, const XMFLOAT3& playerPos) {
         }
         else {
             // 공격 로직
-            
+            std::cout << "[몬스터] : 공격 ! " << '\n';
+
             //_state = static_cast<uint8_t>(MonsterAnimationState::ATTACK);
             //_attackCooldown -= fTimeElapsed;
             //if (_attackCooldown <= 0.0f) {
