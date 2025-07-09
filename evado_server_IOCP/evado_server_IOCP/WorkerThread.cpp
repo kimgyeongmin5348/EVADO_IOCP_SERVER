@@ -360,7 +360,7 @@ void TestSpawnMultipleItems() {
 }
 
 // 몬스터 생성
-void GameLoopThread() {
+void MGameLoopThread() {
 	auto last_time = std::chrono::steady_clock::now();
 	while (true) {
 		auto now = std::chrono::steady_clock::now();

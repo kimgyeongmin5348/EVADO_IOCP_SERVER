@@ -3,6 +3,7 @@
 Spider::Spider(int64_t id, XMFLOAT3 pos, uint8_t state)
     : _monsterID(id), _position(pos), _state(state) {}
 
+
 void Spider::Update(float fTimeElapsed, const XMFLOAT3& playerPos) {
 
     float dx = playerPos.x - _position.x;
@@ -10,9 +11,9 @@ void Spider::Update(float fTimeElapsed, const XMFLOAT3& playerPos) {
     float distance = sqrtf(dx * dx + dz * dz);
 
     // 인식 범위
-    const float aggroRange = 2.0f;
+    const float aggroRange = 50.0f;
     // 공격 범위
-    const float attackRange = 15.0f;
+    const float attackRange = 3.0f;
     // 이동 속도
     const float moveSpeed = 2.5f;
 

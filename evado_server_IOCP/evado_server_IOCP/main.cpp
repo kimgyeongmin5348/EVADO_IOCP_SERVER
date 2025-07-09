@@ -37,7 +37,7 @@ int main()
 	TestSpawnMultipleItems(); // 아이템 생성
 	InitializeMonsters(); // 몬스터 생성
 
-	std::thread game_loop_thread(GameLoopThread);
+	std::thread game_loop_thread(MGameLoopThread);
 
 	// 4. 워커 스레드 생성 및 메인 스레드 대기
 	std::cout << "서버 시작" << std::endl;

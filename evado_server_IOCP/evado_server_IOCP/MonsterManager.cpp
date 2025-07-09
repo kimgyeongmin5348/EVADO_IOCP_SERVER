@@ -77,6 +77,12 @@ void MonsterManager::UpdateAllMonsters(float deltaTime, const std::vector<XMFLOA
         XMFLOAT3 prevPos = monster->GetSpiderPosition();
         uint8_t prevState = monster->GetSpiderAnimaitionState();
 
+        // 플레이어가 없으면 IDLE 상태로
+        if (playerPositions.empty()) {
+            monster->SetSpiderAnimation(static_cast<uint8_t>(MonsterAnimationState::IDLE));
+            continue;
+        }
+
         // 가장 가까운 플레이어 찾기
         XMFLOAT3 nearestPlayer = { 0,0,0 };
         float minDist = FLT_MAX;
