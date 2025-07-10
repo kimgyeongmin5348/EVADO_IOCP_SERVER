@@ -11,10 +11,10 @@ void Spider::Update(float fTimeElapsed, const XMFLOAT3& playerPos) {
     float distance = sqrtf(dx * dx + dz * dz);
 
     // 인식 범위
-    const float aggroRange = 50.0f;
+    const float aggroRange = 8.0f;
     // 공격 범위
-    const float attackRange = 3.0f;
-    // 이동 속도
+    const float attackRange = 2.0f;
+    // 이동 속도  <- 플레이어 이동속도 보고 설정해보자.
     const float moveSpeed = 2.5f;
 
 
