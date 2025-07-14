@@ -45,6 +45,7 @@ public:
 	XMFLOAT3		_look;
 	XMFLOAT3		_right;
 	uint8_t			_animState;
+	short			_hp = 100;
 	std::string		_name;
 	std::atomic<bool> _is_sending{ false };
 

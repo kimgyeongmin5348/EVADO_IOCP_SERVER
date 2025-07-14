@@ -120,6 +120,7 @@ void SESSION::send_player_info_packet()
 	p.look = _look;
 	p.right = _right;
 	p.animState = _animState;
+	p.hp = _hp;
 	//p.hp = 100;
 	do_send(&p);
 }
@@ -200,6 +201,7 @@ void SESSION::process_packet(unsigned char* p)
 		new_user_pkt.look = _look;
 		new_user_pkt.right = _right;
 		new_user_pkt.animState = _animState;
+		new_user_pkt.hp = _hp;
 		BroadcastToAll(&new_user_pkt, _id); // 자신 제외 전체 전송
 
 		// 4. Monster 정보 전송

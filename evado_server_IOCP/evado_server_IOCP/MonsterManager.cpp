@@ -113,7 +113,7 @@ void MonsterManager::UpdateAllMonsters(float deltaTime, const std::vector<XMFLOA
             pkt.position = currentPos;
             pkt.state = currentState;
 
-            std::cout << "[서버] 몬스터 이동: ID=" << pkt.monsterID
+            std::cout << "[ 몬스터 ] Spider 이동: ID=" << pkt.monsterID
                 << " 새 위치(" << pkt.position.x << "," << pkt.position.z << ")"
                 << " 상태: " << static_cast<int>(pkt.state) << "\n";
 
