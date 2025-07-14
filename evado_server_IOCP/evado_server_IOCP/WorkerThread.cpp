@@ -371,16 +371,16 @@ void MGameLoopThread() {
 		last_time = now;
 
 		// 플레이어 위치 수집
-		std::vector<XMFLOAT3> playerPositions;
+		std::vector<SESSION*> playerSessions;
 		{
 			std::lock_guard<std::mutex> lock(g_session_mutex);
 			for (auto& [id, session] : g_sessions) {
-				playerPositions.push_back(session->_position);
+				playerSessions.push_back(session);
 			}
 		}
 
 		// 몬스터 업데이트
-		MonsterManager::GetInstance().UpdateAllMonsters(delta_time, playerPositions);
+		MonsterManager::GetInstance().UpdateAllMonsters(delta_time, playerSessions);
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}

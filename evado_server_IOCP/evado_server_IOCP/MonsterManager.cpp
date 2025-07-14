@@ -68,8 +68,7 @@ std::unordered_map<int64_t, Spider*> MonsterManager::GetAllMonsters() {
     return _monsters;
 }
 
-void MonsterManager::UpdateAllMonsters(float deltaTime, const std::vector<XMFLOAT3>& playerPositions) {
-     
+void MonsterManager::UpdateAllMonsters(float deltaTime, const std::vector<SESSION*>& playerSessions) {
     std::lock_guard<std::mutex> lock(_mutex);
 
     for (auto& pair : _monsters) {
@@ -78,26 +77,33 @@ void MonsterManager::UpdateAllMonsters(float deltaTime, const std::vector<XMFLOA
         uint8_t prevState = monster->GetSpiderAnimaitionState();
 
         // 플레이어가 없으면 IDLE 상태로
-        if (playerPositions.empty()) {
+        if (playerSessions.empty()) {
             monster->SetSpiderAnimation(static_cast<uint8_t>(MonsterAnimationState::IDLE));
             continue;
         }
 
         // 가장 가까운 플레이어 찾기
-        XMFLOAT3 nearestPlayer = { 0,0,0 };
+        SESSION* nearestPlayer = nullptr;
         float minDist = FLT_MAX;
-        for (const auto& pos : playerPositions) {
-            float dx = pos.x - prevPos.x;
-            float dz = pos.z - prevPos.z;
+        for (auto* session : playerSessions) {
+            float dx = session->_position.x - prevPos.x;
+            float dz = session->_position.z - prevPos.z;
             float dist = dx * dx + dz * dz;
             if (dist < minDist) {
                 minDist = dist;
-                nearestPlayer = pos;
+                nearestPlayer = session;
             }
         }
 
-        // 몬스터 업데이트
-        monster->Update(deltaTime, nearestPlayer);
+        // 몬스터 업데이트 (공격 성공 시 true 반환)
+        bool attacked = monster->Update(deltaTime, nearestPlayer->_position);
+
+        // 공격 성공 시 HP 감소
+        if (attacked && nearestPlayer) {
+            nearestPlayer->_hp -= 10;
+            if (nearestPlayer->_hp < 0) nearestPlayer->_hp = 0;
+            nearestPlayer->send_player_info_packet();
+        }
 
         // 현재 위치/상태 저장
         XMFLOAT3 currentPos = monster->GetSpiderPosition();
@@ -105,7 +111,6 @@ void MonsterManager::UpdateAllMonsters(float deltaTime, const std::vector<XMFLOA
 
         // 상태 변화 체크
         if (memcmp(&prevPos, &currentPos, sizeof(XMFLOAT3)) != 0 || prevState != currentState) {
-
             sc_packet_monster_move pkt;
             pkt.size = sizeof(pkt);
             pkt.type = SC_P_MONSTER_MOVE;

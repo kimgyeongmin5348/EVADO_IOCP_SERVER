@@ -5,7 +5,7 @@ class Spider {
 public:
 	Spider(int64_t id, XMFLOAT3 pos, uint8_t state);
 
-	void Update(float fTimeElapsed, const XMFLOAT3& playerPos);  // AI 로직
+	bool Update(float fTimeElapsed, const XMFLOAT3& playerPos);  // AI 로직
 
 
 	void SetSpiderPostion(XMFLOAT3 pos) { _position = pos; }
@@ -18,4 +18,5 @@ private:
 	int64_t  		_monsterID;
 	XMFLOAT3        _position;
 	uint8_t			_state;
+	float			_attackCooldown = 0.0f;
 };

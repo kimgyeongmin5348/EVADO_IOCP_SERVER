@@ -1,6 +1,8 @@
 #pragma once
+#include "WorkerThread.h"
 #include "Monster.h"
 
+class SESSION;
 
 class MonsterManager {
 public:
@@ -10,8 +12,7 @@ public:
     void DespawnMonster(int64_t id);
     Spider* GetMonster(int64_t id);
     std::unordered_map<int64_t, Spider*> GetAllMonsters();
-    void UpdateAllMonsters(float deltaTime, const std::vector<XMFLOAT3>& playerPositions);
-
+    void UpdateAllMonsters(float deltaTime, const std::vector<SESSION*>& playerSessions);
 private:
     MonsterManager() = default;
     ~MonsterManager();
