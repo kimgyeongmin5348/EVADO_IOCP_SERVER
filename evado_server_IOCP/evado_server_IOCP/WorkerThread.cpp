@@ -462,7 +462,7 @@ void MGameLoopThread() {
 void InitializeMonsters() {
 	MonsterManager::GetInstance().SpawnMonster(10001, XMFLOAT3{ 10.f, 0.f, 10.f },
 		static_cast<uint8_t>(MonsterAnimationState::IDLE));
-	MonsterManager::GetInstance().SpawnMonster(10002, XMFLOAT3{ 2.f, 0.f, 19.f },
+	MonsterManager::GetInstance().SpawnMonster(10002, XMFLOAT3{ 7.f, 0.f, 19.f },
 		static_cast<uint8_t>(MonsterAnimationState::IDLE));
 }
 
