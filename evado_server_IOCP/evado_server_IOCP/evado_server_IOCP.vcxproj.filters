@@ -54,7 +54,10 @@
     <ClCompile Include="MonsterManager.cpp">
       <Filter>Contents\NPC</Filter>
     </ClCompile>
-    <ClCompile Include="DBConnet.cpp">
+    <ClCompile Include="DBConnect.cpp">
+      <Filter>DB</Filter>
+    </ClCompile>
+    <ClCompile Include="DBConnectPool.cpp">
       <Filter>DB</Filter>
     </ClCompile>
   </ItemGroup>
@@ -81,6 +84,9 @@
       <Filter>Contents\NPC</Filter>
     </ClInclude>
     <ClInclude Include="DBConnect.h">
+      <Filter>DB</Filter>
+    </ClInclude>
+    <ClInclude Include="DBConnectPool.h">
       <Filter>DB</Filter>
     </ClInclude>
   </ItemGroup>

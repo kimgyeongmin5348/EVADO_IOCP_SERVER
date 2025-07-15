@@ -5,7 +5,6 @@
 #include "Monster.h"
 #include "MonsterManager.h"
 
-
 // 전역 변수 초기화
 HANDLE g_hIOCP;
 std::atomic<long long> g_client_counter = 0;
@@ -17,6 +16,9 @@ std::atomic<int> g_new_id = 0;
 //Item
 ItemManager g_item_manager;
 
+//DB
+DBConnectPool dbPool;
+
 
 
 void safe_remove_session(long long id) {
@@ -27,6 +29,26 @@ void safe_remove_session(long long id) {
 		if (it == g_sessions.end()) return;
 		target = it->second;
 		g_sessions.erase(it);
+	}
+
+	if (target) {
+		// 종료 전 DB 저장
+		DBConnect* dbConn = dbPool.Pop();
+		if (dbConn) {
+			DB_PLAYER_INFO info;
+			info._id = target->_id;
+			info._position = target->_position;
+			info._look = target->_look;
+			info._right = target->_right;
+			info._animState = target->_animState;
+			info._hp = target->_hp;
+
+			dbConn->SavePlayerInfo(info);
+			dbPool.Push(dbConn);
+		}
+
+		// 세션 메모리 정리
+		delete target;
 	}
 
 }
@@ -155,6 +177,40 @@ void SESSION::process_packet(unsigned char* p)
 		_name = packet->name;
 		std::cout << "[서버] " << _id << "번 클라이언트 로그인: " << _name << std::endl;
 
+		// DB 연결 풀에서 커넥션 가져오기
+		DBConnect* dbConn = dbPool.Pop();
+		if (nullptr == dbConn) {
+			// 연결 풀 오류 처리
+			std::cout << "[DB 연결 부족] 로그인 중단 - id: " << _id << std::endl;
+			return;
+		}
+
+		// [DB 조회] 플레이어 존재 여부 확인
+		bool isRegistered = dbConn->IsPlayerRegistered(_id);
+
+		if (isRegistered) {
+			// DB에서 기존 정보 불러오기
+			DB_PLAYER_INFO info = dbConn->ExtractPlayerInfo(_id);
+			_position = info._position;
+			_look = info._look;
+			_right = info._right;
+			_animState = info._animState;
+			_hp = info._hp;
+		}
+		else {
+			// 신규 유저 정보 등록
+			DB_PLAYER_INFO newInfo;
+			newInfo._id = _id;
+			newInfo._position = _position;
+			newInfo._look = _look;
+			newInfo._right = _right;
+			newInfo._animState = _animState;
+			newInfo._hp = _hp;
+
+			dbConn->AddPlayerInfoInDatabase(newInfo);
+		}
+		dbPool.Push(dbConn);
+
 		// 1. 자신의 정보 전송
 		send_player_info_packet();
 
@@ -218,6 +274,7 @@ void SESSION::process_packet(unsigned char* p)
 	
 		break;
 	}
+
 	case CS_P_MOVE: { 
 		cs_packet_move* packet = reinterpret_cast<cs_packet_move*>(p);
 		_position = packet->position;
@@ -244,6 +301,22 @@ void SESSION::process_packet(unsigned char* p)
 		std::cout << "[서버] 브로드캐스트 시작 - 대상 수: " << g_sessions.size() - 1 << "\n";
 
 		BroadcastToAll(&mp, _id);
+
+		// 이동 정보 DB 저장
+		DBConnect* dbConn = dbPool.Pop();
+		if (dbConn) {
+			DB_PLAYER_INFO info;
+			info._id = _id;
+			info._position = _position;
+			info._look = _look;
+			info._right = _right;
+			info._animState = _animState;
+			info._hp = _hp;
+
+			dbConn->SavePlayerInfo(info);
+			dbPool.Push(dbConn);
+		}
+
 		break;
 	}
 

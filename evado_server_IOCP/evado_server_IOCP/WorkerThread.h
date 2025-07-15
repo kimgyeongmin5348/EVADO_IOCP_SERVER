@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Common.h"
+#include "DBConnect.h"
+#include "DBConnectPool.h"
 
 class SESSION;
 
@@ -10,7 +12,7 @@ extern std::atomic<long long> g_client_counter;
 extern std::unordered_map<long long, SESSION*> g_sessions;  //교수님 코드에선 g_user로 되어 있음.
 extern std::mutex g_session_mutex;
 extern SOCKET g_listen_socket;
-
+extern DBConnectPool dbPool;
 
 enum IO_OP { IO_RECV, IO_SEND, IO_ACCEPT };
 

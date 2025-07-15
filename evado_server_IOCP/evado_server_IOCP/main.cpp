@@ -1,10 +1,18 @@
 #include "Common.h"
 #include "workerthread.h"
+#include "DBConnect.h"
+#include "DBConnectPool.h"
 
 
 
 int main()
 {
+
+	if (!dbPool.Connect(20)) { // 연결 풀 크기 설정 (예: 5개)
+		cout << "DB Connection Failed!" << endl;
+		return -1;
+	}
+
 	std::wcout.imbue(std::locale("korean"));
 
 	WSADATA WSAData;
