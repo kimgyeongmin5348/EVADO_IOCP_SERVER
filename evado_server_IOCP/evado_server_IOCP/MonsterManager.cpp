@@ -100,7 +100,7 @@ void MonsterManager::UpdateAllMonsters(float deltaTime, const std::vector<SESSIO
 
         // 공격 성공 시 HP 감소
         if (attacked && nearestPlayer) {
-            nearestPlayer->_hp -= 10;
+            nearestPlayer->_hp -= 0.1;
             if (nearestPlayer->_hp < 0) nearestPlayer->_hp = 0;
             nearestPlayer->send_player_info_packet();
         }
