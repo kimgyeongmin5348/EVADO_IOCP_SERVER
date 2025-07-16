@@ -1,7 +1,15 @@
-﻿  WorkerThread.cpp
+﻿  DBConnect.cpp
+  DBConnectPool.cpp
+  Item.cpp
+  ItemManager.cpp
+  Monster.cpp
+  MonsterManager.cpp
+D:\4th_졸업작품\EVADO_IOCP_SERVER\evado_server_IOCP\evado_server_IOCP\MonsterManager.cpp(103,35): warning C4244: '-=': 'double'에서 'short'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  WorkerThread.cpp
+  main.cpp
   코드를 생성하고 있습니다.
-  2 of 1025 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    1 functions had inline decision re-evaluated but remain unchanged
+  33 of 1052 functions ( 3.1%) were compiled, the rest were copied from previous compilation.
+    30 functions were new in current compilation
+    14 functions had inline decision re-evaluated but remain unchanged
   코드를 생성했습니다.
   evado_server_IOCP.vcxproj -> D:\4th_졸업작품\EVADO_IOCP_SERVER\evado_server_IOCP\x64\Release\evado_server_IOCP.exe

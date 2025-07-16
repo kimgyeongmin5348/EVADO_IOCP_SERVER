@@ -19,7 +19,23 @@ ItemManager g_item_manager;
 //DB
 DBConnectPool dbPool;
 
+// id를 랜덤한 숫자로 지정
+long long GenerateRandomSessionId() {
+	static std::random_device rd;
+	static std::mt19937_64 eng(rd());  
+	static std::uniform_int_distribution<long long> dist(100000000, 999999999); 
 
+	long long id;
+	while (true) {
+		id = dist(eng);
+		{
+			std::lock_guard<std::mutex> lock(g_session_mutex);
+			if (g_sessions.find(id) == g_sessions.end())
+				break;
+		}
+	}
+	return id;
+}
 
 void safe_remove_session(long long id) {
 	SESSION* target = nullptr;
@@ -488,7 +504,7 @@ void WorkerThread() {
 		case IO_ACCEPT:
 		{
 
-			long long new_id = g_new_id.fetch_add(1);
+			long long new_id = GenerateRandomSessionId();
 			SOCKET client_socket = eo->_accept_socket;
 
 			// 1. 클라이언트 주소 정보 추출

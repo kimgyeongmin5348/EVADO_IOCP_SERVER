@@ -33,6 +33,7 @@ public:
 
 };
 
+long long GenerateRandomSessionId();
 void safe_remove_session(long long id);
 
 class SESSION {
