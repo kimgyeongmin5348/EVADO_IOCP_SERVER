@@ -8,7 +8,7 @@
 int main()
 {
 
-	if (!dbPool.Connect(20)) { // 연결 풀 크기 설정 (예: 5개)
+	if (!dbPool.Connect(20)) {
 		cout << "DB Connection Failed!" << endl;
 		return -1;
 	}
@@ -45,6 +45,7 @@ int main()
 	TestSpawnMultipleItems(); // 아이템 생성
 	InitializeMonsters(); // 몬스터 생성
 
+	// 몬스터 관련 스레드
 	std::thread game_loop_thread(MGameLoopThread);
 
 	// 4. 워커 스레드 생성 및 메인 스레드 대기

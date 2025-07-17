@@ -159,7 +159,6 @@ void SESSION::send_player_info_packet()
 	p.right = _right;
 	p.animState = _animState;
 	p.hp = _hp;
-	//p.hp = 100;
 	do_send(&p);
 }
 
@@ -541,9 +540,11 @@ void WorkerThread() {
 			break;
 
 		}
+
 		case IO_SEND:
 			delete eo;
 			break;
+
 		case IO_RECV:
 		{
 			// 1. 뮤텍스 락으로 세션 검색 (스레드 세이프)
