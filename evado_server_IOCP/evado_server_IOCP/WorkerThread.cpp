@@ -263,6 +263,7 @@ void SESSION::process_packet(unsigned char* p)
 			pkt.item_id = item->GetID();
 			pkt.position = item->GetPosition();
 			pkt.item_type = item->GetType();
+			//이곳에 아이템 가치(cash)를 적어야함.
 			do_send(&pkt);
 		}
 
@@ -432,24 +433,30 @@ void do_accept(SOCKET s_socket) {
 }
 
 // 아이템 생성 처리
-void SpawnItemToAll(long long id, XMFLOAT3 pos, int item_type) {
+void SpawnItemToAll(long long id, XMFLOAT3 pos, int item_type, short cash) {
 	sc_packet_item_spawn pkt;
 	pkt.size = sizeof(pkt);
 	pkt.type = SC_P_ITEM_SPAWN;
 	pkt.item_id = id;
 	pkt.position = pos;
 	pkt.item_type = item_type; // 새 필드 추가
+	pkt.cash = cash;
 
 	BroadcastToAll(&pkt); // exclude_id 기본값 0 (모두에게 전송)
 }
 
 void TestSpawnMultipleItems() {
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<short> dist(1, 300); // 1~300 short형
+
 	for (int i = 0; i < 5; ++i) {
 		XMFLOAT3 pos = { 10.0f + i * 2, 0.0f, 5.0f + i * 3 };
 		int item_type = (i % 3) + 1;
 		long long item_id = 20000 + i;
+		short cash = dist(gen);
 		g_item_manager.SpawnItem(item_id, pos, item_type);
-		SpawnItemToAll(item_id, pos, item_type);
+		SpawnItemToAll(item_id, pos, item_type, cash);
 	}
 }
 

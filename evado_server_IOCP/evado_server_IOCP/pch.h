@@ -134,6 +134,7 @@ struct sc_packet_item_spawn {
 	long long			item_id;
 	XMFLOAT3			position;
 	int					item_type;
+	short				cash;
 };
 
 struct sc_packet_item_despawn {

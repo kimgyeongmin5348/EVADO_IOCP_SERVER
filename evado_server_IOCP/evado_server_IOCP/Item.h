@@ -18,6 +18,7 @@ private:
     XMFLOAT3        _position;
     long long       _holder_id = 0; // 0 = 지면에 있음
     int             _type;
+    short           _cash;
 };
 
 
