@@ -66,6 +66,7 @@ struct sc_packet_user_info {
 	XMFLOAT3		right;
 	uint8_t			animState;
 	short			hp;
+	//short			cash;
 };
 
 struct sc_packet_move {
@@ -87,6 +88,7 @@ struct sc_packet_enter {
 	XMFLOAT3			right;
 	uint8_t				animState;
 	short				hp;
+	//short				cash;
 };
 
 struct sc_packet_leave {

@@ -159,6 +159,7 @@ void SESSION::send_player_info_packet()
 	p.right = _right;
 	p.animState = _animState;
 	p.hp = _hp;
+	//p.cash = _cash; 
 	do_send(&p);
 }
 
@@ -244,6 +245,8 @@ void SESSION::process_packet(unsigned char* p)
 				pkt.look = ex_session->_look;
 				pkt.right = ex_session->_right;
 				pkt.animState = ex_session->GetAnimationState();
+				pkt.hp = ex_session->_hp;
+				//pkt.cash = ex_session->_cash;  
 				existing_users.push_back(pkt);
 			}
 		}
@@ -273,6 +276,7 @@ void SESSION::process_packet(unsigned char* p)
 		new_user_pkt.right = _right;
 		new_user_pkt.animState = _animState;
 		new_user_pkt.hp = _hp;
+		//new_user_pkt.cash = _cash;  
 		BroadcastToAll(&new_user_pkt, _id); // 자신 제외 전체 전송
 
 		// 4. Monster 정보 전송

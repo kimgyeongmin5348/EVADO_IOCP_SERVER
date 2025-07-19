@@ -49,6 +49,7 @@ public:
 	XMFLOAT3		_right;
 	uint8_t			_animState;
 	short			_hp = 100;
+	//short			_cash;
 	std::string		_name;
 	std::atomic<bool> _is_sending{ false };
 

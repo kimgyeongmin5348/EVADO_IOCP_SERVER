@@ -188,7 +188,7 @@ bool DBConnect::IsPlayerRegistered(long long id)
 
 bool DBConnect::AddPlayerInfoInDatabase(const DB_PLAYER_INFO& info)
 {
-	wstring query = L"EXEC AddNewPlayer ?,?,?,?,?,?,?,?,?,?,?,?";
+	wstring query = L"EXEC AddNewPlayer ?,?,?,?,?,?,?,?,?,?,?,?";  // 이거 12개임 db수정후 13개로 고쳐야함.
 
 	// 1. id
 	if (!BindParam(1, SQL_C_SBIGINT, SQL_BIGINT, 0, (SQLPOINTER)&info._id, nullptr)) return false;
@@ -212,8 +212,9 @@ bool DBConnect::AddPlayerInfoInDatabase(const DB_PLAYER_INFO& info)
 	uint8_t anim = info._animState;
 	if (!BindParam(11, SQL_C_UTINYINT, SQL_TINYINT, 0, (SQLPOINTER)&anim, nullptr)) return false;
 
-	// 12.  hp
+	// 12 ~ 13.  hp, cash
 	if (!BindParam(12, SQL_C_SHORT, SQL_SMALLINT, 0, (SQLPOINTER)&info._hp, nullptr)) return false;
+	//if (!BindParam(13, SQL_C_SHORT, SQL_SMALLINT, 0, (SQLPOINTER)&info._cash, nullptr)) return false;
 
 	Execute(query.c_str());
 	Unbind();
@@ -247,6 +248,7 @@ DB_PLAYER_INFO DBConnect::ExtractPlayerInfo(long long id)
 
 	BindCol(10, SQL_C_UTINYINT, sizeof(uint8_t), &info._animState, &cb);
 	BindCol(11, SQL_C_SHORT, sizeof(short), &info._hp, &cb);
+	//BindCol(12, SQL_C_SHORT, sizeof(short), &info._cash, &cb);
 
 	Fetch();
 	Unbind();
@@ -256,7 +258,7 @@ DB_PLAYER_INFO DBConnect::ExtractPlayerInfo(long long id)
 
 bool DBConnect::SavePlayerInfo(const DB_PLAYER_INFO& info)
 {
-	wstring query = L"EXEC SavePlayerInfo ?,?,?,?,?,?,?,?,?,?,?,?";
+	wstring query = L"EXEC SavePlayerInfo ?,?,?,?,?,?,?,?,?,?,?,?";  // 이것도 12개임, db수정후 13개로 고쳐야함
 
 	if (!BindParam(1, SQL_C_SBIGINT, SQL_BIGINT, 0, (SQLPOINTER)&info._id, nullptr)) return false;
 
@@ -274,6 +276,7 @@ bool DBConnect::SavePlayerInfo(const DB_PLAYER_INFO& info)
 
 	if (!BindParam(11, SQL_C_UTINYINT, SQL_TINYINT, 0, (SQLPOINTER)&info._animState, nullptr)) return false;
 	if (!BindParam(12, SQL_C_SHORT, SQL_SMALLINT, 0, (SQLPOINTER)&info._hp, nullptr)) return false;
+	//if (!BindParam(13, SQL_C_SHORT, SQL_SMALLINT, 0, (SQLPOINTER)&info._cash, nullptr)) return false;
 
 	Execute(query.c_str());
 	Unbind();
