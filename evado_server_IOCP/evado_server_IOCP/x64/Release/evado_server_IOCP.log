@@ -1,2 +1,11 @@
-﻿Monster.obj : error LNK2001: 확인할 수 없는 외부 기호 "public: void __cdecl Spider::FindPath(struct TileCoord const &,bool const (* const)[24])" (?FindPath@Spider@@QEAAXAEBUTileCoord@@QEAY0BI@$$CB_N@Z)
-D:\4th_졸업작품\EVADO_IOCP_SERVER\evado_server_IOCP\x64\Release\evado_server_IOCP.exe : fatal error LNK1120: 1개의 확인할 수 없는 외부 참조입니다.
+﻿  Monster.cpp
+D:\4th_졸업작품\EVADO_IOCP_SERVER\evado_server_IOCP\evado_server_IOCP\Monster.cpp(146,62): warning C4244: '인수': 'int'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\4th_졸업작품\EVADO_IOCP_SERVER\evado_server_IOCP\evado_server_IOCP\Monster.cpp(174,22): warning C4244: '초기화 중': 'int'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  MonsterManager.cpp
+D:\4th_졸업작품\EVADO_IOCP_SERVER\evado_server_IOCP\evado_server_IOCP\MonsterManager.cpp(106,35): warning C4244: '-=': 'double'에서 'short'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  WorkerThread.cpp
+  코드를 생성하고 있습니다.
+  Previous IPDB was built with incompatible compiler, fall back to full compilation.
+  All 1339 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  코드를 생성했습니다.
+  evado_server_IOCP.vcxproj -> D:\4th_졸업작품\EVADO_IOCP_SERVER\evado_server_IOCP\x64\Release\evado_server_IOCP.exe
