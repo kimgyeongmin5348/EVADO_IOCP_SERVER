@@ -12,7 +12,7 @@ public:
     void DespawnMonster(int64_t id);
     Spider* GetMonster(int64_t id);
     std::unordered_map<int64_t, Spider*> GetAllMonsters();
-    void UpdateAllMonsters(float deltaTime, const std::vector<SESSION*>& playerSessions);
+    void UpdateAllMonsters(float deltaTime, const std::vector<SESSION*>& playerSessions, const bool map[MAP_HEIGHT][MAP_WIDTH]);
 private:
     MonsterManager() = default;
     ~MonsterManager();

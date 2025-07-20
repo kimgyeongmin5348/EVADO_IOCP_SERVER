@@ -29,6 +29,9 @@
 #include <vector>
 #include <filesystem>
 #include <iomanip>
+#include <queue>
+#include <cmath>
+#include <limits>
 
 
 // DirectX ฐüทร 
