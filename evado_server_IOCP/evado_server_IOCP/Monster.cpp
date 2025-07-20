@@ -49,6 +49,8 @@ Spider::Spider(int64_t id, XMFLOAT3 pos, uint8_t state)
 //    }
 //}
 
+
+// A* 알고리즘 적용
 bool Spider::Update(float dt, const XMFLOAT3& playerPos, const bool map[MAP_HEIGHT][MAP_WIDTH]) {
     float dx = playerPos.x - _position.x;
     float dz = playerPos.z - _position.z;
@@ -113,6 +115,7 @@ bool Spider::Update(float dt, const XMFLOAT3& playerPos, const bool map[MAP_HEIG
     return false;
 }
 
+// A* 알고리즘
 void Spider::FindPath(const TileCoord& to, const bool map[MAP_HEIGHT][MAP_WIDTH]) {
     // 실제 경로탐색 알고리즘(A* 등) 코드 작성
 
