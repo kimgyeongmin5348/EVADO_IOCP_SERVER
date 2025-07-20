@@ -479,7 +479,7 @@ void MGameLoopThread() {
 		}
 
 		// 몬스터 업데이트
-		MonsterManager::GetInstance().UpdateAllMonsters(delta_time, playerSessions);
+		MonsterManager::GetInstance().UpdateAllMonsters(delta_time, playerSessions, worldMap);
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}

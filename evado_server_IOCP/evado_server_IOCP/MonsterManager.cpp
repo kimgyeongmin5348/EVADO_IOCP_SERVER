@@ -2,6 +2,8 @@
 #include "WorkerThread.h"
 #include "Common.h"
 
+bool worldMap[MAP_HEIGHT][MAP_WIDTH];
+
 MonsterManager& MonsterManager::GetInstance() {
     static MonsterManager instance;
     return instance;
@@ -68,7 +70,7 @@ std::unordered_map<int64_t, Spider*> MonsterManager::GetAllMonsters() {
     return _monsters;
 }
 
-void MonsterManager::UpdateAllMonsters(float deltaTime, const std::vector<SESSION*>& playerSessions) {
+void MonsterManager::UpdateAllMonsters(float deltaTime, const std::vector<SESSION*>& playerSessions, const bool map[MAP_HEIGHT][MAP_WIDTH]) {
     std::lock_guard<std::mutex> lock(_mutex);
 
     for (auto& pair : _monsters) {
@@ -96,7 +98,8 @@ void MonsterManager::UpdateAllMonsters(float deltaTime, const std::vector<SESSIO
         }
 
         // 몬스터 업데이트 (공격 성공 시 true 반환)
-        bool attacked = monster->Update(deltaTime, nearestPlayer->_position);
+        //bool attacked = monster->Update(deltaTime, nearestPlayer->_position);
+        bool attacked = monster->Update(deltaTime, nearestPlayer->_position, worldMap);
 
         // 공격 성공 시 HP 감소
         if (attacked && nearestPlayer) {
