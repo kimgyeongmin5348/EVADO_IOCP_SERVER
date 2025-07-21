@@ -1,4 +1,5 @@
 #include "Common.h"
+#include "Monster.h"
 #include "workerthread.h"
 #include "DBConnect.h"
 #include "DBConnectPool.h"
@@ -17,7 +18,7 @@
 //		- 아이템의 값어치 설정함. (랜덤값[1~300]으로 설정함)
 // 
 //	4. 플레이어 정보 저장
-// 
+//		-DB에 저장 할려고 했지만 시간상? 부족하여 지금은 컨테이너에 저장하게 하자..
 // 
 //	5. 
 // 
@@ -32,6 +33,12 @@ int main()
 		cout << "DB Connection Failed!" << endl;
 		return -1;
 	}*/
+
+	for (int y = 0; y < MAP_HEIGHT; ++y) {
+		for (int x = 0; x < MAP_WIDTH; ++x) {
+			worldMap[y][x] = true; // 기본적으로 모두 이동 가능하게 셋팅
+		}
+	}
 
 	std::wcout.imbue(std::locale("korean"));
 

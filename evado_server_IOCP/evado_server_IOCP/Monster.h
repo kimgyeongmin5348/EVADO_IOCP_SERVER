@@ -7,7 +7,7 @@ struct TileCoord {
 	bool operator==(const TileCoord& rhs) const { return x == rhs.x && y == rhs.y; }
 };
 
-constexpr float TILE_SIZE = 1.0f;
+
 extern bool worldMap[MAP_HEIGHT][MAP_WIDTH];
 
 class Spider {
@@ -37,10 +37,14 @@ private:
 	std::queue<TileCoord> _path;
 
 	static TileCoord WorldToTile(float x, float z) {
-		return { int(x / TILE_SIZE), int(z / TILE_SIZE) };
+		return {
+			int((x - MAP_ORIGIN_X) / TILE_SIZE),
+			int((z - MAP_ORIGIN_Z) / TILE_SIZE)
+		};
 	}
 	static void TileToWorld(int tx, int tz, float& x, float& z) {
-		x = (tx + 0.5f) * TILE_SIZE; z = (tz + 0.5f) * TILE_SIZE;
+		x = MAP_ORIGIN_X + (tx + 0.5f) * TILE_SIZE;
+		z = MAP_ORIGIN_Z + (tz + 0.5f) * TILE_SIZE;
 	}
 
 };

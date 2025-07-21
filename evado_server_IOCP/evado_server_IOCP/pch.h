@@ -24,8 +24,12 @@ constexpr char CS_P_MOVE = 6;
 constexpr char SC_P_LOGIN_FAIL = 7;
 
 
-constexpr unsigned short MAP_HEIGHT = 24;  //전에는 8이었음
-constexpr unsigned short MAP_WIDTH = 24;   //전에는 8이었음
+constexpr float TILE_SIZE = 1.0f;
+constexpr float MAP_ORIGIN_X = -100.0f;
+constexpr float MAP_ORIGIN_Z = -100.0f;
+
+constexpr unsigned short MAP_WIDTH = 200;  // 전에는 8이었음.
+constexpr unsigned short MAP_HEIGHT = 200;
 
 constexpr char SC_P_ITEM_SPAWN = 9;
 constexpr char SC_P_ITEM_DESPAWN = 10;

@@ -56,7 +56,7 @@ bool Spider::Update(float dt, const XMFLOAT3& playerPos, const bool map[MAP_HEIG
     float dz = playerPos.z - _position.z;
     float distance = sqrtf(dx * dx + dz * dz);
 
-    const float aggroRange = 6.0f;
+    const float aggroRange = 40.0f;
     const float attackRange = 2.0f;
     const float moveSpeed = 2.5f;
 
@@ -66,6 +66,11 @@ bool Spider::Update(float dt, const XMFLOAT3& playerPos, const bool map[MAP_HEIG
         if (distance > attackRange) {
             // 1. 목표 타일 좌표 계산
             TileCoord playerTile = WorldToTile(playerPos.x, playerPos.z);
+
+            // x/y가 벗어나면 패스 (디펜시브)
+            if (playerTile.x < 0 || playerTile.x >= MAP_WIDTH ||
+                playerTile.y < 0 || playerTile.y >= MAP_HEIGHT)
+                return false;
 
             // 2. 경로 없거나, 목적지가 바뀌면 재탐색
             if (_path.empty() || _path.back() != playerTile) {
@@ -83,6 +88,11 @@ bool Spider::Update(float dt, const XMFLOAT3& playerPos, const bool map[MAP_HEIG
                 }
                 float nextX, nextZ;
                 TileToWorld(next.x, next.y, nextX, nextZ);
+
+                std::cout << "[몬스터] " << _monsterID << " 현재 위치("
+                    << _position.x << ", " << _position.z
+                    << ") -> 다음 타일(" << next.x << "," << next.y
+                    << ") | 목표좌표(" << nextX << "," << nextZ << ")\n";
 
                 float ddx = nextX - _position.x;
                 float ddz = nextZ - _position.z;
@@ -117,10 +127,30 @@ bool Spider::Update(float dt, const XMFLOAT3& playerPos, const bool map[MAP_HEIG
 
 // A* 알고리즘
 void Spider::FindPath(const TileCoord& to, const bool map[MAP_HEIGHT][MAP_WIDTH]) {
-    // 실제 경로탐색 알고리즘(A* 등) 코드 작성
 
     // 현재 몬스터 위치 -> 시작 타일 좌표
     TileCoord start = WorldToTile(_position.x, _position.z);
+
+    // (옵셔널) 경계 확인
+    if (start.x < 0 || start.x >= MAP_WIDTH ||
+        start.y < 0 || start.y >= MAP_HEIGHT)
+    {
+        _path = {};
+        std::cout << "[A*] 시작 위치가 맵 범위를 벗어남!" << std::endl;
+        return;
+    }
+    if (to.x < 0 || to.x >= MAP_WIDTH ||
+        to.y < 0 || to.y >= MAP_HEIGHT)
+    {
+        _path = {};
+        std::cout << "[A*] 목표 위치가 맵 범위를 벗어남!" << std::endl;
+        return;
+    }
+
+
+    std::cout << "[A*] 몬스터 ID: " << _monsterID
+        << " 경로탐색 시작 (" << start.x << ", " << start.y << ") -> ("
+        << to.x << ", " << to.y << ")" << std::endl;
 
     // A* 노드 내부 구조체
     struct Node {
@@ -178,6 +208,7 @@ void Spider::FindPath(const TileCoord& to, const bool map[MAP_HEIGHT][MAP_WIDTH]
 
     // 경로 못 찾은 경우
     if (!goalNode) {
+        std::cout << "[A*] 경로 못 찾음!" << std::endl;
         while (!open.empty()) { delete open.top(); open.pop(); }
         _path = {}; // 경로 없음
         return;
@@ -197,6 +228,14 @@ void Spider::FindPath(const TileCoord& to, const bool map[MAP_HEIGHT][MAP_WIDTH]
 
     // 경로 뒤집어 큐에 push(시작점->도착점 순서)
     std::reverse(rev_path.begin(), rev_path.end());
+
+    std::cout << "[A*] 경로 길이: " << rev_path.size();
+    if (!rev_path.empty())
+        std::cout << " (도착: " << rev_path.back().x << ", " << rev_path.back().y << ")";
+    std::cout << "\n[A*] 경로:";
+    for (auto& t : rev_path)
+        std::cout << " -> (" << t.x << "," << t.y << ")";
+    std::cout << std::endl;
 
     std::queue<TileCoord> q;
     // 첫 번째 타일은 현재 타일=생략하고, 다음부터 q에 push
