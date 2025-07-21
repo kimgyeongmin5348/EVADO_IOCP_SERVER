@@ -90,3 +90,6 @@ void WorkerThread();
 void MGameLoopThread();
 void TestSpawnMultipleItems();
 void InitializeMonsters();
+
+bool IsObstacleObject(const std::string& name);
+void InitializeWorldMap();

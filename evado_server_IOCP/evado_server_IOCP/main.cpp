@@ -34,11 +34,7 @@ int main()
 		return -1;
 	}*/
 
-	for (int y = 0; y < MAP_HEIGHT; ++y) {
-		for (int x = 0; x < MAP_WIDTH; ++x) {
-			worldMap[y][x] = true; // 기본적으로 모두 이동 가능하게 셋팅
-		}
-	}
+	InitializeWorldMap();
 
 	std::wcout.imbue(std::locale("korean"));
 

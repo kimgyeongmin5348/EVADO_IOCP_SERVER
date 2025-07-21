@@ -492,6 +492,71 @@ void InitializeMonsters() {
 		static_cast<uint8_t>(MonsterAnimationState::IDLE));
 }
 
+
+bool IsObstacleObject(const std::string& name) {
+	static const std::vector<std::string> obstacles = { "벽", "Wall", "파이프", "Pipe" };
+	for (const auto& str : obstacles) {
+		if (name.find(str) != std::string::npos) return true;
+	}
+	return false;
+}
+
+void InitializeWorldMap() {
+	// 먼저 전체 이동 가능(true)로 세팅
+	for (int y = 0; y < MAP_HEIGHT; ++y)
+		for (int x = 0; x < MAP_WIDTH; ++x)
+			worldMap[y][x] = true;
+
+	// 1. 맵 오브젝트 인스턴스 파일(.bin 등) 로드 (직접 파싱 필요)
+	std::ifstream inFile("Model/Map/Setter/Map_objects_instances_setter.bin", std::ios::binary);
+	if (!inFile) {
+		std::cerr << "장애물 파일을 열 수 없습니다!" << std::endl;
+		return;
+	}
+
+	// 2. 파일 포맷에 맞춰 파싱 (Map 코드에서 참고)
+	auto ReadString = [](std::ifstream& f) {
+		uint8_t len;
+		f.read(reinterpret_cast<char*>(&len), sizeof(uint8_t));
+		std::string str(len, '\0');
+		f.read(&str[0], len);
+		return str;
+		};
+
+	// 예: <Frame> 태그 등 스킵
+	ReadString(inFile); // <Frame>:
+	ReadString(inFile); // 루트오브젝트이름
+	ReadString(inFile); // <Transform>:
+	inFile.ignore(sizeof(float) * (3 + 3 + 3 + 4)); // 피치, 롤, 스케일, 쿼터니언
+	ReadString(inFile); // <Matrix>:
+	inFile.ignore(sizeof(float) * 16); // 행렬
+	ReadString(inFile); // <Children>:
+	int childCount;
+	inFile.read(reinterpret_cast<char*>(&childCount), sizeof(int));
+
+	for (int i = 0; i < childCount; i++) {
+		ReadString(inFile); // <Frame>:
+		std::string objectName = ReadString(inFile);
+		ReadString(inFile); // <Transform>:
+		float pos[3], rot[3], scl[3], quat[4];
+		inFile.read(reinterpret_cast<char*>(pos), sizeof(float) * 3);
+		inFile.read(reinterpret_cast<char*>(rot), sizeof(float) * 3);
+		inFile.read(reinterpret_cast<char*>(scl), sizeof(float) * 3);
+		inFile.read(reinterpret_cast<char*>(quat), sizeof(float) * 4);
+		ReadString(inFile); // <Matrix>:
+		inFile.ignore(sizeof(float) * 16); // 행렬
+		ReadString(inFile); // </Frame>
+
+		// 3. 장애물 objectName이면, worldMap 해당 타일 false로
+		if (IsObstacleObject(objectName)) {
+			TileCoord tile = Spider::WorldToTile(pos[0], pos[2]);
+			if (tile.x >= 0 && tile.x < MAP_WIDTH && tile.y >= 0 && tile.y < MAP_HEIGHT)
+				worldMap[tile.y][tile.x] = false; // 이동불가
+		}
+	}
+	inFile.close();
+}
+
 // Worker Thread 핸들러
 void WorkerThread() {
 	while (true) {
