@@ -33,11 +33,12 @@ private:
 	uint8_t			_state;
 	float			_attackCooldown = 0.0f;
 
+	// **** (추가) A* 경로 저장 ****
+	std::queue<TileCoord> _path;
 	
 public:
 
-	// **** (추가) A* 경로 저장 ****
-	std::queue<TileCoord> _path;
+	
 
 	static TileCoord WorldToTile(float x, float z) {
 		return {
