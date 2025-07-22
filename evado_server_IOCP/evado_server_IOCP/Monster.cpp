@@ -74,7 +74,7 @@ bool Spider::Update(float dt, const XMFLOAT3& playerPos, const bool map[MAP_HEIG
 
             // 2. 경로 없거나, 목적지가 바뀌면 재탐색
             if (_path.empty() || _path.back() != playerTile) {
-                FindPath(playerTile, map);
+                FindPath(playerTile, map);  // A* 알고리즘 적용
             }
 
             // 3. 경로따라 이동
@@ -127,121 +127,71 @@ bool Spider::Update(float dt, const XMFLOAT3& playerPos, const bool map[MAP_HEIG
 
 // A* 알고리즘
 void Spider::FindPath(const TileCoord& to, const bool map[MAP_HEIGHT][MAP_WIDTH]) {
-
-    // 현재 몬스터 위치 -> 시작 타일 좌표
     TileCoord start = WorldToTile(_position.x, _position.z);
 
-    // (옵셔널) 경계 확인
-    if (start.x < 0 || start.x >= MAP_WIDTH ||
-        start.y < 0 || start.y >= MAP_HEIGHT)
-    {
-        _path = {};
-        std::cout << "[A*] 시작 위치가 맵 범위를 벗어남!" << std::endl;
-        return;
-    }
-    if (to.x < 0 || to.x >= MAP_WIDTH ||
-        to.y < 0 || to.y >= MAP_HEIGHT)
-    {
-        _path = {};
-        std::cout << "[A*] 목표 위치가 맵 범위를 벗어남!" << std::endl;
-        return;
-    }
+    if (start.x < 0 || start.x >= MAP_WIDTH || start.y < 0 || start.y >= MAP_HEIGHT) return;
+    if (to.x < 0 || to.x >= MAP_WIDTH || to.y < 0 || to.y >= MAP_HEIGHT) return;
 
-
-    std::cout << "[A*] 몬스터 ID: " << _monsterID
-        << " 경로탐색 시작 (" << start.x << ", " << start.y << ") -> ("
-        << to.x << ", " << to.y << ")" << std::endl;
-
-    // A* 노드 내부 구조체
-    struct Node {
-        int x, y;
-        float g, h;
-        Node* parent;
-        Node(int x_, int y_, float g_, float h_, Node* p_) : x(x_), y(y_), g(g_), h(h_), parent(p_) {}
-    };
-
+    // 노드 정보 2차원 배열
+    NodeInfo nodes[MAP_HEIGHT][MAP_WIDTH];
     auto heuristic = [](int ax, int ay, int bx, int by) {
-        // 맨해튼 거리(4방향)
-        return std::abs(ax - bx) + std::abs(ay - by);
+        return float(abs(ax - bx) + abs(ay - by));
         };
 
-    // 우선순위큐(최솟값 기준)
-    auto cmp = [](const Node* a, const Node* b) { return (a->g + a->h) > (b->g + b->h); };
-    std::priority_queue<Node*, std::vector<Node*>, decltype(cmp)> open(cmp);
+    std::priority_queue<OpenNode> open;
+    nodes[start.y][start.x].g = 0;
+    open.push({ start.x, start.y, heuristic(start.x, start.y, to.x, to.y) });
 
-    // 방문 체크 및 부모 노드 정보
-    bool closed[MAP_HEIGHT][MAP_WIDTH] = { false };
+    constexpr int dx[4] = { 1, -1, 0, 0 };
+    constexpr int dy[4] = { 0, 0, 1, -1 };
+    bool found = false;
 
-    // 시작 노드 정보
-    Node* startNode = new Node(start.x, start.y, 0, heuristic(start.x, start.y, to.x, to.y), nullptr);
-    open.push(startNode);
-
-    Node* goalNode = nullptr;
-
-    // A* 주요 루프
     while (!open.empty()) {
-        Node* current = open.top(); open.pop();
+        auto [cx, cy, f] = open.top(); open.pop();
+        if (nodes[cy][cx].closed) continue; // 이미 최적 경로로 방문 완료
 
-        // 목적지 도달
-        if (current->x == to.x && current->y == to.y) {
-            goalNode = current;
-            break;
-        }
-        closed[current->y][current->x] = true;
+        nodes[cy][cx].closed = true;
+        if (cx == to.x && cy == to.y) { found = true; break; }
 
-        // 네 방향 체크 (상,하,좌,우)
-        const int dx[4] = { 1, -1, 0, 0 };
-        const int dy[4] = { 0, 0, 1, -1 };
         for (int dir = 0; dir < 4; ++dir) {
-            int nx = current->x + dx[dir];
-            int ny = current->y + dy[dir];
-
-            // 영역 벗어남 장애물 이미 방문했다면 continue
+            int nx = cx + dx[dir], ny = cy + dy[dir];
             if (nx < 0 || ny < 0 || nx >= MAP_WIDTH || ny >= MAP_HEIGHT) continue;
-            if (!map[ny][nx] || closed[ny][nx]) continue;
+            if (!map[ny][nx]) continue;            // 장애물
+            if (nodes[ny][nx].closed) continue;    // 이미 방문
 
-            float ng = current->g + 1;
-            float nh = heuristic(nx, ny, to.x, to.y);
-            open.push(new Node(nx, ny, ng, nh, current));
+            float ng = nodes[cy][cx].g + 1;
+            if (ng < nodes[ny][nx].g) { // 더 짧은 경로면 갱신
+                nodes[ny][nx].g = ng;
+                nodes[ny][nx].parentX = cx;
+                nodes[ny][nx].parentY = cy;
+                float h = heuristic(nx, ny, to.x, to.y);
+                open.push({ nx, ny, ng + h });
+            }
         }
     }
 
-    // 경로 못 찾은 경우
-    if (!goalNode) {
-        std::cout << "[A*] 경로 못 찾음!" << std::endl;
-        while (!open.empty()) { delete open.top(); open.pop(); }
-        _path = {}; // 경로 없음
-        return;
-    }
-
-    // 경로 역추적 - 리스트로 담은 뒤 큐로 변환
-    std::vector<TileCoord> rev_path;
-    Node* node = goalNode;
-    while (node) {
-        rev_path.push_back({ node->x, node->y });
-        node = node->parent;
-    }
-
-    // open/closed에 남은 노드 해제
-    // (생략 가능; 실제 서비스에선 smart pointer 권장)
-    // 여기서는 new한 노드가 open엔 남아 있을 수 있으니 반드시 모두 해제 필요
-
-    // 경로 뒤집어 큐에 push(시작점->도착점 순서)
-    std::reverse(rev_path.begin(), rev_path.end());
-
-    std::cout << "[A*] 경로 길이: " << rev_path.size();
-    if (!rev_path.empty())
-        std::cout << " (도착: " << rev_path.back().x << ", " << rev_path.back().y << ")";
-    std::cout << "\n[A*] 경로:";
-    for (auto& t : rev_path)
-        std::cout << " -> (" << t.x << "," << t.y << ")";
-    std::cout << std::endl;
-
+    // 경로 역추적
     std::queue<TileCoord> q;
-    // 첫 번째 타일은 현재 타일=생략하고, 다음부터 q에 push
-    for (size_t i = 1; i < rev_path.size(); ++i) {
-        q.push(rev_path[i]);
+    if (found) {
+        int x = to.x, y = to.y;
+        std::vector<TileCoord> rev_path;
+        while (!(x == start.x && y == start.y)) {
+            rev_path.push_back({ x,y });
+            int px = nodes[y][x].parentX, py = nodes[y][x].parentY;
+            if (px == -1 || py == -1) break; // 예외 방지
+            x = px; y = py;
+        }
+        std::reverse(rev_path.begin(), rev_path.end());
+
+        std::cout << "[A* 경로] 몬스터ID: " << _monsterID << " 경로: ";
+        for (const auto& tile : rev_path) {
+            std::cout << " -> (" << tile.x << "," << tile.y << ")";
+        }
+        std::cout << std::endl;
+
+        for (const auto& tile : rev_path) {
+            q.push(tile);
+        }
     }
     _path = q;
-
 }

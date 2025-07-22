@@ -492,7 +492,7 @@ void InitializeMonsters() {
 		static_cast<uint8_t>(MonsterAnimationState::IDLE));
 }
 
-
+// [A*] 길을 찾기 위한 Map
 bool IsObstacleObject(const std::string& name) {
 	static const std::vector<std::string> obstacles = { "벽", "Wall", "파이프", "Pipe" };
 	for (const auto& str : obstacles) {
@@ -501,6 +501,7 @@ bool IsObstacleObject(const std::string& name) {
 	return false;
 }
 
+// [A*] Map 불러오기
 void InitializeWorldMap() {
 	// 먼저 전체 이동 가능(true)로 세팅
 	for (int y = 0; y < MAP_HEIGHT; ++y)
@@ -523,14 +524,14 @@ void InitializeWorldMap() {
 		return str;
 		};
 
-	// 예: <Frame> 태그 등 스킵
-	ReadString(inFile); // <Frame>:
-	ReadString(inFile); // 루트오브젝트이름
-	ReadString(inFile); // <Transform>:
-	inFile.ignore(sizeof(float) * (3 + 3 + 3 + 4)); // 피치, 롤, 스케일, 쿼터니언
-	ReadString(inFile); // <Matrix>:
-	inFile.ignore(sizeof(float) * 16); // 행렬
-	ReadString(inFile); // <Children>:
+	// 파일 포맷에 맞춰서 의미 없는(여기선 장애물 식별에 필요 없는) 정보들을 건너뜀
+	ReadString(inFile);
+	ReadString(inFile);
+	ReadString(inFile); 
+	inFile.ignore(sizeof(float) * (3 + 3 + 3 + 4));  
+	ReadString(inFile); 
+	inFile.ignore(sizeof(float) * 16); 
+	ReadString(inFile); 
 	int childCount;
 	inFile.read(reinterpret_cast<char*>(&childCount), sizeof(int));
 

@@ -25,14 +25,14 @@
     <Filter Include="Contents">
       <UniqueIdentifier>{1c56de23-0a5b-4fbd-be57-69f94b5d4231}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Contents\NPC">
-      <UniqueIdentifier>{59e139e3-0219-476d-bb5e-554707048596}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Contents\Item">
       <UniqueIdentifier>{a008baf7-8168-4dfd-b767-963b97600b87}</UniqueIdentifier>
     </Filter>
     <Filter Include="DB">
       <UniqueIdentifier>{2f9acc6b-aab2-4c05-965e-7f9e35162f1c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Contents\NPC%28A%2a%29">
+      <UniqueIdentifier>{59e139e3-0219-476d-bb5e-554707048596}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -43,7 +43,7 @@
       <Filter>Server_Main</Filter>
     </ClCompile>
     <ClCompile Include="Monster.cpp">
-      <Filter>Contents\NPC</Filter>
+      <Filter>Contents\NPC%28A%2a%29</Filter>
     </ClCompile>
     <ClCompile Include="Item.cpp">
       <Filter>Contents\Item</Filter>
@@ -52,7 +52,7 @@
       <Filter>Contents\Item</Filter>
     </ClCompile>
     <ClCompile Include="MonsterManager.cpp">
-      <Filter>Contents\NPC</Filter>
+      <Filter>Contents\NPC%28A%2a%29</Filter>
     </ClCompile>
     <ClCompile Include="DBConnect.cpp">
       <Filter>DB</Filter>
@@ -72,7 +72,7 @@
       <Filter>Server_Main\Framework</Filter>
     </ClInclude>
     <ClInclude Include="Monster.h">
-      <Filter>Contents\NPC</Filter>
+      <Filter>Contents\NPC%28A%2a%29</Filter>
     </ClInclude>
     <ClInclude Include="Item.h">
       <Filter>Contents\Item</Filter>
@@ -81,7 +81,7 @@
       <Filter>Contents\Item</Filter>
     </ClInclude>
     <ClInclude Include="MonsterManager.h">
-      <Filter>Contents\NPC</Filter>
+      <Filter>Contents\NPC%28A%2a%29</Filter>
     </ClInclude>
     <ClInclude Include="DBConnect.h">
       <Filter>DB</Filter>

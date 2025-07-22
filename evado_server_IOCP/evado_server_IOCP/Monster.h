@@ -7,6 +7,20 @@ struct TileCoord {
 	bool operator==(const TileCoord& rhs) const { return x == rhs.x && y == rhs.y; }
 };
 
+struct NodeInfo {
+	float g = FLT_MAX;      // 현재까지 온 거리
+	int parentX = -1, parentY = -1;
+	bool closed = false;
+};
+
+// open 노드 큐에 넣을 record
+struct OpenNode {
+	int x, y;
+	float f; // g + h
+	bool operator<(const OpenNode& o) const {
+		return f > o.f; // 우선순위큐는 f가 작은게 먼저
+	}
+};
 
 extern bool worldMap[MAP_HEIGHT][MAP_WIDTH];
 
