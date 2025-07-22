@@ -3,7 +3,7 @@
 
 class Item {
 public:
-    Item(long long id, XMFLOAT3 pos, int item_type);
+    Item(long long id, XMFLOAT3 pos, int item_type, short cash);
 
     void SetPosition(XMFLOAT3 pos) { _position = pos; }
     XMFLOAT3 GetPosition() const { return _position; }

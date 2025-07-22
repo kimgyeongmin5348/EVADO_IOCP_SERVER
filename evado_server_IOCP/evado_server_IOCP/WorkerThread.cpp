@@ -268,7 +268,7 @@ void SESSION::process_packet(unsigned char* p)
 			pkt.item_id = item->GetID();
 			pkt.position = item->GetPosition();
 			pkt.item_type = item->GetType();
-			//이곳에 아이템 가치(cash)를 적어야함.
+			pkt.cash = static_cast<short>(g_item_prices[pkt.item_type]);
 			do_send(&pkt);
 		}
 
@@ -470,10 +470,11 @@ void TestSpawnMultipleItems() {
 
 	for (int i = 0; i < 5; ++i) {
 		XMFLOAT3 pos = { 10.0f + i * 2, 0.0f, 5.0f + i * 3 };
-		int item_type = (i % 3) + 1;
+		int item_type = (i % 4) + 1;
 		long long item_id = 20000 + i;
-		short cash = dist(gen);
-		g_item_manager.SpawnItem(item_id, pos, item_type);
+
+		short cash = static_cast<short>(g_item_prices[item_type]);
+		g_item_manager.SpawnItem(item_id, pos, item_type, cash);
 		SpawnItemToAll(item_id, pos, item_type, cash);
 	}
 }
@@ -595,7 +596,7 @@ void SESSION::ProcessShopBuy(int item_type)
 		_inventory.insert(item_type);
 		ack.success = true;
 		ack.left_cash = _cash;
-		SendPlayerInfo();
+		send_player_info_packet();
 	}
 	else {
 		ack.success = false;
@@ -618,7 +619,7 @@ void SESSION::ProcessShopSell(int item_type)
 		_cash += price;
 		ack.success = true;
 		ack.left_cash = _cash;
-		SendPlayerInfo();
+		send_player_info_packet();
 	}
 	else {
 		ack.success = false;

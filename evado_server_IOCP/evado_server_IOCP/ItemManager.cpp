@@ -11,7 +11,7 @@ ItemManager::~ItemManager() {
     _items.clear();
 }
 
-void ItemManager::SpawnItem(long long id, XMFLOAT3 pos, int item_type) {
+void ItemManager::SpawnItem(long long id, XMFLOAT3 pos, int item_type, short cash) {
     std::lock_guard<std::mutex> lock(_item_mutex);
 
     // 기존 아이템 중복 확인
@@ -20,11 +20,11 @@ void ItemManager::SpawnItem(long long id, XMFLOAT3 pos, int item_type) {
         return;
     }
 
-    Item* new_item = new Item(id, pos, item_type);
+    Item* new_item = new Item(id, pos, item_type, cash);
     _items[id] = new_item;
     std::cout << "[서버] 아이템 생성: ID=" << id
         << " 위치(" << pos.x << "," << pos.y << "," << pos.z << ")"
-        << " 타입: " << item_type << "\n";
+        << " 타입: " << item_type << ", 값어치 : " << cash << "\n";
 }
 
 void ItemManager::DespawnItem(long long id) {

@@ -6,7 +6,7 @@ public:
     ItemManager();
     ~ItemManager();
 
-    void SpawnItem(long long id, XMFLOAT3 pos, int item_type);
+    void SpawnItem(long long id, XMFLOAT3 pos, int item_type, short cash);
     void DespawnItem(long long id);
     Item* GetItem(long long id);
     void UpdateItemPosition(long long id, XMFLOAT3 pos);

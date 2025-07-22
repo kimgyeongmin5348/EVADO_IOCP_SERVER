@@ -83,7 +83,6 @@ public:
 
 	void ProcessShopBuy(int item_type);
 	void ProcessShopSell(int item_type);
-	void SendPlayerInfo(); // 클라에 현재 상태 전체 전송(재화, 인벤토리 등)
 
 	
 };
