@@ -55,8 +55,8 @@ enum class AnimationState : uint8_t {
 	IDLE,         // 0
 	WALK,         // 1
 	RUN,          // 2 
-	SWING,        // 3
-	JUMP,         // 4
+	JUMP,         // 3
+	SWING,        // 4
 	CROUCH,       // 5
 	CROUCH_WALK   // 6
 };
@@ -70,7 +70,7 @@ struct sc_packet_user_info {
 	XMFLOAT3		right;
 	uint8_t			animState;
 	short			hp;
-	//short			cash;
+	short			cash;
 };
 
 struct sc_packet_move {
@@ -92,7 +92,7 @@ struct sc_packet_enter {
 	XMFLOAT3			right;
 	uint8_t				animState;
 	short				hp;
-	//short				cash;
+	short				cash;
 };
 
 struct sc_packet_leave {
@@ -169,6 +169,40 @@ struct sc_packet_item_move {
 	long long			holder_id; // 소유자 ID (0 = 지면에 있음)
 };
 
+// 상점
+struct cs_packet_shop_buy
+{
+	unsigned char size;
+	unsigned char type; // CS_P_SHOP_BUY
+	int item_type;
+};
+
+struct sc_packet_shop_buy_ack
+{
+	unsigned char size;
+	unsigned char type;
+	bool success;
+	int new_cash;          // 남은 금액
+	int bought_item_type;  // 지급된 아이템 번호(또는 실패시 -1)
+};
+
+
+struct cs_packet_shop_sell
+{
+	unsigned char size;
+	unsigned char type; // CS_P_SHOP_SELL
+	int item_type;      // 팔 아이템 번호
+};
+
+struct sc_packet_shop_sell_ack
+{
+	unsigned char size;
+	unsigned char type;
+	bool success;
+	int new_cash;          // 갱신된 금액
+	int sold_item_type;    // 판매 성공시 해당 번호
+};
+
 // Monster
 enum class MonsterAnimationState : uint8_t
 {
@@ -194,6 +228,9 @@ struct sc_packet_monster_move
 	XMFLOAT3			position;
 	uint8_t				state;
 };
+
+
+
 
 #pragma pack (pop)
 
