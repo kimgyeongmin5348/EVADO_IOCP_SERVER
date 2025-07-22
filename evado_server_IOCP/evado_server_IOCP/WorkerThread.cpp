@@ -259,19 +259,6 @@ void SESSION::process_packet(unsigned char* p)
 			do_send(&pkt);
 		}
 
-		// 2. 기존 아이템 정보 전송
-		auto items = g_item_manager.GetAllItems();
-		for (auto* item : items) {
-			sc_packet_item_spawn pkt;
-			pkt.size = sizeof(pkt);
-			pkt.type = SC_P_ITEM_SPAWN;
-			pkt.item_id = item->GetID();
-			pkt.position = item->GetPosition();
-			pkt.item_type = item->GetType();
-			pkt.cash = static_cast<short>(g_item_prices[pkt.item_type]);
-			do_send(&pkt);
-		}
-
 		// 3. 신규 유저 정보 브로드캐스트
 		sc_packet_enter new_user_pkt;
 		new_user_pkt.size = sizeof(new_user_pkt);
@@ -285,7 +272,28 @@ void SESSION::process_packet(unsigned char* p)
 		new_user_pkt.cash = _cash;  
 		BroadcastToAll(&new_user_pkt, _id); // 자신 제외 전체 전송
 
-		// 4. Monster 정보 전송
+		
+	
+		break;
+	}
+	
+	case CS_P_LOADING_DONE: {
+		std::cout << "[서버] " << _id << "번 클라이언트가 로딩 완료를 알림\n";
+
+		// 아이템 정보 전송
+		auto items = g_item_manager.GetAllItems();
+		for (auto* item : items) {
+			sc_packet_item_spawn pkt;
+			pkt.size = sizeof(pkt);
+			pkt.type = SC_P_ITEM_SPAWN;
+			pkt.item_id = item->GetID();
+			pkt.position = item->GetPosition();
+			pkt.item_type = item->GetType();
+			pkt.cash = static_cast<short>(g_item_prices[pkt.item_type]);
+			do_send(&pkt);
+		}
+
+		// 몬스터 정보 전송
 		auto monsters = MonsterManager::GetInstance().GetAllMonsters();
 		for (auto& [monster_id, monster] : monsters) {
 			sc_packet_monster_spawn pkt;
@@ -294,9 +302,9 @@ void SESSION::process_packet(unsigned char* p)
 			pkt.monsterID = monster->GetSpiderID();
 			pkt.position = monster->GetSpiderPosition();
 			pkt.state = monster->GetSpiderAnimaitionState();
-			do_send(&pkt); // 새 클라이언트에게만 전송
+			do_send(&pkt);
 		}
-	
+
 		break;
 	}
 
