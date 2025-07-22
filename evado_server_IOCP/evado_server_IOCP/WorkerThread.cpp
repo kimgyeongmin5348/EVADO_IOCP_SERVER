@@ -19,6 +19,14 @@ ItemManager g_item_manager;
 //DB
 DBConnectPool dbPool;
 
+//상점
+std::unordered_map<int, int> g_item_prices = {
+	{ITEM_TYPE_SHOVEL, 80},
+	{ITEM_TYPE_HANDMAP, 150},
+	{ITEM_TYPE_FLASHLIGHT, 80},
+	{ITEM_TYPE_WHISTLE, 30}
+};
+
 // id를 랜덤한 숫자로 지정
 long long GenerateRandomSessionId() {
 	static std::random_device rd;
@@ -363,6 +371,20 @@ void SESSION::process_packet(unsigned char* p)
 		break;
 	}
 
+	case CS_P_SHOP_BUY: 
+	{
+		cs_packet_shop_buy* packet = reinterpret_cast<cs_packet_shop_buy*>(p);
+		ProcessShopBuy(packet->item_type);
+		break;
+	}
+
+	case CS_P_SHOP_SELL: 
+	{
+		cs_packet_shop_sell* packet = reinterpret_cast<cs_packet_shop_sell*>(p);
+		ProcessShopSell(packet->item_type);
+		break;
+	}
+
 	default:
 		std::cout << "[경고] 잘못된 패킷 타입: " << (int)packet_type << "\n";
 		safe_remove_session(_id); // 연결 종료
@@ -556,6 +578,53 @@ void InitializeWorldMap() {
 		}
 	}
 	inFile.close();
+}
+
+// 상점 관련 함수들
+void SESSION::ProcessShopBuy(int item_type)
+{
+	sc_packet_shop_buy_ack ack = {};
+	ack.size = sizeof(ack);
+	ack.type = SC_P_SHOP_BUY_ACK;
+	ack.item_type = item_type;
+
+	int price = g_item_prices[item_type];
+	if (_cash >= price && _inventory.find(item_type) == _inventory.end()) // 중복 소유 금지 예시
+	{
+		_cash -= price;
+		_inventory.insert(item_type);
+		ack.success = true;
+		ack.left_cash = _cash;
+		SendPlayerInfo();
+	}
+	else {
+		ack.success = false;
+		ack.left_cash = _cash;
+	}
+	do_send(&ack);
+}
+
+void SESSION::ProcessShopSell(int item_type)
+{
+	sc_packet_shop_sell_ack ack = {};
+	ack.size = sizeof(ack);
+	ack.type = SC_P_SHOP_SELL_ACK;
+	ack.item_type = item_type;
+
+	auto it = _inventory.find(item_type);
+	if (it != _inventory.end()) {
+		int price = g_item_prices[item_type];
+		_inventory.erase(it);
+		_cash += price;
+		ack.success = true;
+		ack.left_cash = _cash;
+		SendPlayerInfo();
+	}
+	else {
+		ack.success = false;
+		ack.left_cash = _cash;
+	}
+	do_send(&ack);
 }
 
 // Worker Thread 핸들러

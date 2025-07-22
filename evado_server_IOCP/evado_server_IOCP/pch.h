@@ -39,14 +39,22 @@ constexpr char CS_P_ITEM_MOVE = 13;
 
 constexpr char MAX_ID_LENGTH = 20;
 
-constexpr char MOVE_UP = 1;
-constexpr char MOVE_DOWN = 2;
-constexpr char MOVE_LEFT = 3;
-constexpr char MOVE_RIGHT = 4;
+//constexpr char MOVE_UP = 1;
+//constexpr char MOVE_DOWN = 2;
+//constexpr char MOVE_LEFT = 3;
+//constexpr char MOVE_RIGHT = 4;
 
 constexpr char SC_P_MONSTER_SPAWN = 14;
 constexpr char SC_P_MONSTER_MOVE = 15;
 constexpr char SC_P_MONSTER_DIE = 16;
+
+// 상점 관련 패킷
+constexpr char CS_P_SHOP_BUY = 21;
+constexpr char CS_P_SHOP_SELL = 22;
+constexpr char SC_P_SHOP_BUY_ACK = 23;
+constexpr char SC_P_SHOP_SELL_ACK = 24;
+
+
 
 
 #pragma pack (push, 1)
@@ -170,37 +178,35 @@ struct sc_packet_item_move {
 };
 
 // 상점
-struct cs_packet_shop_buy
+struct cs_packet_shop_buy 
 {
 	unsigned char size;
 	unsigned char type; // CS_P_SHOP_BUY
 	int item_type;
 };
 
-struct sc_packet_shop_buy_ack
-{
-	unsigned char size;
-	unsigned char type;
-	bool success;
-	int new_cash;          // 남은 금액
-	int bought_item_type;  // 지급된 아이템 번호(또는 실패시 -1)
-};
-
-
-struct cs_packet_shop_sell
+struct cs_packet_shop_sell 
 {
 	unsigned char size;
 	unsigned char type; // CS_P_SHOP_SELL
-	int item_type;      // 팔 아이템 번호
+	int item_type;
 };
 
-struct sc_packet_shop_sell_ack
+struct sc_packet_shop_buy_ack 
 {
 	unsigned char size;
-	unsigned char type;
+	unsigned char type; // SC_P_SHOP_BUY_ACK
 	bool success;
-	int new_cash;          // 갱신된 금액
-	int sold_item_type;    // 판매 성공시 해당 번호
+	int item_type;
+	int left_cash;
+};
+struct sc_packet_shop_sell_ack 
+{
+	unsigned char size;
+	unsigned char type; // SC_P_SHOP_SELL_ACK
+	bool success;
+	int item_type;
+	int left_cash;
 };
 
 // Monster

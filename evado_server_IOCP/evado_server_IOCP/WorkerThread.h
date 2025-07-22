@@ -49,7 +49,7 @@ public:
 	XMFLOAT3		_right;
 	uint8_t			_animState;
 	short			_hp = 100;
-	short			_cash;
+	short			_cash = 0;
 	std::string		_name;
 	std::atomic<bool> _is_sending{ false };
 
@@ -78,6 +78,13 @@ public:
 
 	void SetAnimationState(uint8_t state) { _animState = state; }
 	uint8_t GetAnimationState() const { return _animState; }
+
+	std::set<int> _inventory;	// 간단한 인벤토리(아이템타입 번호 모음)
+
+	void ProcessShopBuy(int item_type);
+	void ProcessShopSell(int item_type);
+	void SendPlayerInfo(); // 클라에 현재 상태 전체 전송(재화, 인벤토리 등)
+
 	
 };
 
