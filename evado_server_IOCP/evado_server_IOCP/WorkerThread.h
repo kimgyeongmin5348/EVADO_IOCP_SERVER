@@ -74,7 +74,7 @@ public:
 	void do_send(void* buff);
 	void send_player_info_packet();	
 	void process_packet(unsigned char* p);
-	void HandleItemPickup(long long item_id);
+	//void HandleItemPickup(long long item_id);
 
 	void SetAnimationState(uint8_t state) { _animState = state; }
 	uint8_t GetAnimationState() const { return _animState; }

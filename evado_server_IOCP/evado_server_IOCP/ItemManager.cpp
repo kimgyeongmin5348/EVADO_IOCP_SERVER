@@ -1,4 +1,5 @@
 #include "ItemManager.h"
+#include "WorkerThread.h"
 
 
 ItemManager::ItemManager() = default;
@@ -41,22 +42,33 @@ void ItemManager::DespawnItem(long long id) {
     std::cout << "[서버] 아이템 삭제: ID=" << id << "\n";
 }
 
-Item* ItemManager::GetItem(long long id) {
-    std::lock_guard<std::mutex> lock(_item_mutex);
-    auto it = _items.find(id);
-    return (it != _items.end()) ? it->second : nullptr;
-}
+//Item* ItemManager::GetItem(long long id) {
+//    std::lock_guard<std::mutex> lock(_item_mutex);
+//    auto it = _items.find(id);
+//    return (it != _items.end()) ? it->second : nullptr;
+//}
 
 void ItemManager::UpdateItemPosition(long long id, XMFLOAT3 pos) {
     std::lock_guard<std::mutex> lock(_item_mutex);
 
     auto it = _items.find(id);
     if (it == _items.end()) {
-        std::cerr << "[서버] 아이템 위치 업데이트 실패: ID " << id << "\n";
+        std::cerr << "[서버] 아이템 위치 갱신 실패: 존재하지 않는 ID " << id << "\n";
         return;
     }
 
-    it->second->SetPosition(pos);
+    // 실제 아이템 위치 갱신
+    it->second->SetPosition(pos);  // 또는 _item_position 직접 변경
+
+    // 위치 변경 알림용 패킷 생성 및 전송
+    sc_packet_item_move move_pkt;
+    move_pkt.size = sizeof(move_pkt);
+    move_pkt.type = SC_P_ITEM_MOVE;
+    move_pkt.item_id = id;
+    move_pkt.position = pos;
+
+    BroadcastToAll(&move_pkt, -1);
+
     std::cout << "[서버] 아이템 위치 갱신: ID=" << id
         << " 새 위치(" << pos.x << "," << pos.y << "," << pos.z << ")\n";
 }

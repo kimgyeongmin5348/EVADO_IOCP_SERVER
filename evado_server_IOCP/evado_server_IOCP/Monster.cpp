@@ -56,7 +56,7 @@ bool Spider::Update(float dt, const XMFLOAT3& playerPos, const bool map[MAP_HEIG
     float dz = playerPos.z - _position.z;
     float distance = sqrtf(dx * dx + dz * dz);
 
-    const float aggroRange = 6.0f;
+    const float aggroRange = 8.0f;
     const float attackRange = 2.0f;
     const float moveSpeed = 2.5f;
 

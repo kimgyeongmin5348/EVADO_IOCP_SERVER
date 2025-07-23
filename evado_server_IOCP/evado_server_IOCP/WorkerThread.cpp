@@ -355,29 +355,20 @@ void SESSION::process_packet(unsigned char* p)
 	case CS_P_ITEM_PICKUP: 
 	{
 		cs_packet_item_pickup* packet = reinterpret_cast<cs_packet_item_pickup*>(p);
-		HandleItemPickup(packet->item_id);
+		//HandleItemPickup(packet->item_id);
 		break;
 	}
 	
-	case CS_P_ITEM_MOVE: 
+	case CS_P_ITEM_MOVE:
 	{
 		cs_packet_item_move* packet = reinterpret_cast<cs_packet_item_move*>(p);
-		Item* item = g_item_manager.GetItem(packet->item_id);
-		if (item && item->GetHolder() == _id) {
-			item->SetPosition(packet->position);
 
-			// 모든 클라이언트에 위치 업데이트
-			sc_packet_item_move move_pkt;
-			move_pkt.size = sizeof(move_pkt);
-			move_pkt.type = SC_P_ITEM_MOVE;
-			move_pkt.item_id = packet->item_id;
-			move_pkt.position = packet->position;
-			move_pkt.holder_id = _id;
+		g_item_manager.UpdateItemPosition(packet->item_id, packet->position);
 
-			BroadcastToAll(&move_pkt);
-		}
+		
 		break;
 	}
+
 
 	case CS_P_SHOP_BUY: 
 	{
@@ -401,24 +392,24 @@ void SESSION::process_packet(unsigned char* p)
 }
 
 // 아이템 획득 처리
-void SESSION::HandleItemPickup(long long item_id) {
-	Item* item = g_item_manager.GetItem(item_id);
-	if (!item || item->GetHolder() != 0) {
-		std::cout << "[서버] " << _id << "번 플레이어 아이템 획득 실패: "
-			<< (item ? "이미 소유중" : "존재하지 않음") << "\n";
-		return;
-	}
-
-	item->SetHolder(_id);
-
-	sc_packet_item_despawn pkt;
-	pkt.size = sizeof(pkt);
-	pkt.type = SC_P_ITEM_DESPAWN;
-	pkt.item_id = item_id;
-
-	BroadcastToAll(&pkt);
-	
-}
+//void SESSION::HandleItemPickup(long long item_id) {
+//	Item* item = g_item_manager.GetItem(item_id);
+//	if (!item || item->GetHolder() != 0) {
+//		std::cout << "[서버] " << _id << "번 플레이어 아이템 획득 실패: "
+//			<< (item ? "이미 소유중" : "존재하지 않음") << "\n";
+//		return;
+//	}
+//
+//	item->SetHolder(_id);
+//
+//	sc_packet_item_despawn pkt;
+//	pkt.size = sizeof(pkt);
+//	pkt.type = SC_P_ITEM_DESPAWN;
+//	pkt.item_id = item_id;
+//
+//	BroadcastToAll(&pkt);
+//	
+//}
 
 void print_error_message(int s_err)
 {
@@ -474,10 +465,9 @@ void SpawnItemToAll(long long id, XMFLOAT3 pos, int item_type, short cash) {
 void TestSpawnMultipleItems() {
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_int_distribution<short> dist(1, 300); // 1~300 short형
 
-	for (int i = 0; i < 5; ++i) {
-		XMFLOAT3 pos = { 10.0f + i * 2, 0.0f, 5.0f + i * 3 };
+	for (int i = 0; i < 3; ++i) {
+		XMFLOAT3 pos = { -2.0f, 0.f, 19.0f + i * 3 };
 		int item_type = (i % 4) + 1;
 		long long item_id = 20000 + i;
 
