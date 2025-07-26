@@ -8,8 +8,8 @@ class MonsterManager {
 public:
     static MonsterManager& GetInstance();
 
-    void SpawnMonster(int64_t id, const XMFLOAT3& pos, uint8_t state);
-    void DespawnMonster(int64_t id);
+    void SpawnMonster(int64_t id, const XMFLOAT3& pos, uint8_t state, int hp);
+    void DespawnMonster(int64_t id); // 몬스터 hp 가 0이 될때
     Spider* GetMonster(int64_t id);
     std::unordered_map<int64_t, Spider*> GetAllMonsters();
     // A* 알고리즘 적용된 것.

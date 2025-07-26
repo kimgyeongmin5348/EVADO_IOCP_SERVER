@@ -278,6 +278,8 @@ void SESSION::process_packet(unsigned char* p)
 	}
 	
 	case CS_P_LOADING_DONE: {
+		cs_packet_loading_done* packet = reinterpret_cast<cs_packet_loading_done*>(p);
+
 		std::cout << "[서버] " << _id << "번 클라이언트가 로딩 완료를 알림\n";
 
 		// 아이템 정보 전송
@@ -302,6 +304,7 @@ void SESSION::process_packet(unsigned char* p)
 			pkt.monsterID = monster->GetSpiderID();
 			pkt.position = monster->GetSpiderPosition();
 			pkt.state = monster->GetSpiderAnimaitionState();
+			pkt.hp = monster->GetHP();
 			do_send(&pkt);
 		}
 
@@ -382,6 +385,39 @@ void SESSION::process_packet(unsigned char* p)
 		cs_packet_shop_sell* packet = reinterpret_cast<cs_packet_shop_sell*>(p);
 		ProcessShopSell(packet->item_type);
 		break;
+	}
+
+	case CS_P_SHOVEL_DAMAGE:
+	{
+		cs_packet_shovel_damage* packet = reinterpret_cast<cs_packet_shovel_damage*>(p);
+
+		long long monsterID = packet->monsterID;
+		int damage = packet->damage;
+
+		// 1. 몬스터 객체 가져오기
+		Spider* monster = MonsterManager::GetInstance().GetMonster(monsterID);
+		if (!monster) break;
+
+		// 2. HP 감소
+		int new_hp = std::max(monster->GetHP() - damage, 0);
+		monster->SetHP(new_hp);
+
+		// 3. 몬스터 죽음 처리(0 이하) 필요시
+		if (new_hp == 0) {
+			// MonsterManager::DespawnMonster(monsterID); // 죽었으면 디스폰 등
+		}
+
+		// 4. 모든 클라이언트에 HP 갱신 패킷 브로드캐스트
+		sc_packet_update_monster_hp pkt;
+		pkt.size = sizeof(pkt);
+		pkt.type = SC_P_UPDATE_MONSTER_HP;
+		pkt.monsterID = monsterID;
+		pkt.hp = new_hp;
+		BroadcastToAll(&pkt);
+
+		break;
+
+
 	}
 
 	default:
@@ -504,13 +540,13 @@ void MGameLoopThread() {
 
 void InitializeMonsters() {
 	MonsterManager::GetInstance().SpawnMonster(10001, XMFLOAT3{ 32.f, 0.f, -8.f },
-		static_cast<uint8_t>(MonsterAnimationState::IDLE));
+		static_cast<uint8_t>(MonsterAnimationState::IDLE),100);
 	MonsterManager::GetInstance().SpawnMonster(10002, XMFLOAT3{ 4.f, 0.f, -50.f },
-		static_cast<uint8_t>(MonsterAnimationState::IDLE));
+		static_cast<uint8_t>(MonsterAnimationState::IDLE),100);
 	MonsterManager::GetInstance().SpawnMonster(10003, XMFLOAT3{ -46.f, 0.f, -42.f },
-		static_cast<uint8_t>(MonsterAnimationState::IDLE));
+		static_cast<uint8_t>(MonsterAnimationState::IDLE),100);
 	MonsterManager::GetInstance().SpawnMonster(10004, XMFLOAT3{ -54.f, 0.f, -90.f },
-		static_cast<uint8_t>(MonsterAnimationState::IDLE));
+		static_cast<uint8_t>(MonsterAnimationState::IDLE),100);
 }
 
 // [A*] 길을 찾기 위한 Map

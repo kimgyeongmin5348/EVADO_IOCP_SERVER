@@ -26,7 +26,7 @@ extern bool worldMap[MAP_HEIGHT][MAP_WIDTH];
 
 class Spider {
 public:
-	Spider(int64_t id, XMFLOAT3 pos, uint8_t state);
+	Spider(int64_t id, XMFLOAT3 pos, uint8_t state, int hp);
 
 	// bool Update(float fTimeElapsed, const XMFLOAT3& playerPos);  // AI 로직
 	// **A* 경로사용을 위한 시그니처: map 파라미터 추가**
@@ -37,6 +37,8 @@ public:
 	int64_t GetSpiderID() const { return _monsterID; }
 	void SetSpiderAnimation(uint8_t state) { _state = state; }
 	uint8_t GetSpiderAnimaitionState()const { return _state; }
+	int GetHP() const { return _hp; }
+	void SetHP(int hp) { _hp = hp; }
 
 	void FindPath(const TileCoord& to, const bool map[MAP_HEIGHT][MAP_WIDTH]);
 	// 테스트용: path size 확인 등 getter
@@ -46,6 +48,7 @@ private:
 	XMFLOAT3        _position;
 	uint8_t			_state;
 	float			_attackCooldown = 0.0f;
+	int				_hp;
 
 	// **** (추가) A* 경로 저장 ****
 	std::queue<TileCoord> _path;

@@ -17,7 +17,7 @@ MonsterManager::~MonsterManager() {
     _monsters.clear();
 }
 
-void MonsterManager::SpawnMonster(int64_t id, const XMFLOAT3& pos, uint8_t state) {
+void MonsterManager::SpawnMonster(int64_t id, const XMFLOAT3& pos, uint8_t state, int hp) {
     std::lock_guard<std::mutex> lock(_mutex);
 
     if (_monsters.find(id) != _monsters.end()) {
@@ -25,12 +25,12 @@ void MonsterManager::SpawnMonster(int64_t id, const XMFLOAT3& pos, uint8_t state
         return;
     }
 
-    Spider* newMonster = new Spider(id, pos, state);
+    Spider* newMonster = new Spider(id, pos, state, hp);
     _monsters[id] = newMonster;
 
     std::cout << "[서버] 몬스터 생성: ID=" << id
         << " 위치(" << pos.x << "," << pos.y << "," << pos.z << ")"
-        << " 상태: " << static_cast<int>(state) << "\n";
+        << " 상태: " << static_cast<int>(state) << ", HP : "<< hp << "\n";
 
     // 클라이언트에 스폰 패킷 전송
     sc_packet_monster_spawn pkt;
@@ -39,6 +39,7 @@ void MonsterManager::SpawnMonster(int64_t id, const XMFLOAT3& pos, uint8_t state
     pkt.monsterID = id;
     pkt.position = pos;
     pkt.state = state;
+    pkt.hp = hp;
     BroadcastToAll(&pkt,-1);
 }
 

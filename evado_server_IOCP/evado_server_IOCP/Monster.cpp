@@ -1,7 +1,7 @@
 ﻿#include "Monster.h"
 
-Spider::Spider(int64_t id, XMFLOAT3 pos, uint8_t state)
-    : _monsterID(id), _position(pos), _state(state) {}
+Spider::Spider(int64_t id, XMFLOAT3 pos, uint8_t state, int hp)
+    : _monsterID(id), _position(pos), _state(state), _hp(hp) {}
 
 
 //bool Spider::Update(float fTimeElapsed, const XMFLOAT3& playerPos) {
