@@ -502,7 +502,7 @@ void TestSpawnMultipleItems() {
 	std::random_device rd;
 	std::mt19937 gen(rd());
 
-	for (int i = 0; i < 3; ++i) {
+	for (int i = 0; i < 4; ++i) {
 		XMFLOAT3 pos = { -2.0f, 0.f, 19.0f + i * 3 };
 		int item_type = (i % 4) + 1;
 		long long item_id = 20000 + i;
