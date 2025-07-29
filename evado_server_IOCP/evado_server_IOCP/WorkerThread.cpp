@@ -259,6 +259,7 @@ void SESSION::process_packet(unsigned char* p)
 			do_send(&pkt);
 		}
 
+
 		// 3. 신규 유저 정보 브로드캐스트
 		sc_packet_enter new_user_pkt;
 		new_user_pkt.size = sizeof(new_user_pkt);
@@ -331,10 +332,10 @@ void SESSION::process_packet(unsigned char* p)
 		mp.right = _right;
 		mp.animState = _animState;
 
-		std::cout << "[서버] " << _id << "번 클라이언트 위치 수신: (" << _position.x << ", " << _position.y << ", " << _position.z << ", "
+		/*std::cout << "[서버] " << _id << "번 클라이언트 위치 수신: (" << _position.x << ", " << _position.y << ", " << _position.z << ", "
 			<< _look.x << ", " << _look.y << ", " << _look.z << ", "
 			<< _right.x << ", " << _right.y << ", " << _right.z << ", " << static_cast<int>(_animState) << ")\n";
-		std::cout << "[서버] 브로드캐스트 시작 - 대상 수: " << g_sessions.size() - 1 << "\n";
+		std::cout << "[서버] 브로드캐스트 시작 - 대상 수: " << g_sessions.size() - 1 << "\n";*/
 
 		BroadcastToAll(&mp, _id);
 
@@ -371,7 +372,6 @@ void SESSION::process_packet(unsigned char* p)
 		
 		break;
 	}
-
 
 	case CS_P_SHOP_BUY: 
 	{
@@ -502,7 +502,7 @@ void TestSpawnMultipleItems() {
 	std::random_device rd;
 	std::mt19937 gen(rd());
 
-	for (int i = 0; i < 4; ++i) {
+	for (int i = 0; i < 3; ++i) {
 		XMFLOAT3 pos = { -2.0f, 0.f, 19.0f + i * 3 };
 		int item_type = (i % 4) + 1;
 		long long item_id = 20000 + i;

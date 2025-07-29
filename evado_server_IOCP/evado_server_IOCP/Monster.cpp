@@ -56,9 +56,9 @@ bool Spider::Update(float dt, const XMFLOAT3& playerPos, const bool map[MAP_HEIG
     float dz = playerPos.z - _position.z;
     float distance = sqrtf(dx * dx + dz * dz);
 
-    const float aggroRange = 8.0f;
+    const float aggroRange = 15.0f;
     const float attackRange = 2.0f;
-    const float moveSpeed = 2.5f;
+    const float moveSpeed = 4.5f;
 
     _attackCooldown -= dt;
 
@@ -89,10 +89,10 @@ bool Spider::Update(float dt, const XMFLOAT3& playerPos, const bool map[MAP_HEIG
                 float nextX, nextZ;
                 TileToWorld(next.x, next.y, nextX, nextZ);
 
-                std::cout << "[몬스터] " << _monsterID << " 현재 위치("
+             /*   std::cout << "[몬스터] " << _monsterID << " 현재 위치("
                     << _position.x << ", " << _position.z
                     << ") -> 다음 타일(" << next.x << "," << next.y
-                    << ") | 목표좌표(" << nextX << "," << nextZ << ")\n";
+                    << ") | 목표좌표(" << nextX << "," << nextZ << ")\n";*/
 
                 float ddx = nextX - _position.x;
                 float ddz = nextZ - _position.z;
@@ -183,11 +183,11 @@ void Spider::FindPath(const TileCoord& to, const bool map[MAP_HEIGHT][MAP_WIDTH]
         }
         std::reverse(rev_path.begin(), rev_path.end());
 
-        std::cout << "[A* 경로] 몬스터ID: " << _monsterID << " 경로: ";
+      /*  std::cout << "[A* 경로] 몬스터ID: " << _monsterID << " 경로: ";
         for (const auto& tile : rev_path) {
             std::cout << " -> (" << tile.x << "," << tile.y << ")";
         }
-        std::cout << std::endl;
+        std::cout << std::endl;*/
 
         for (const auto& tile : rev_path) {
             q.push(tile);
