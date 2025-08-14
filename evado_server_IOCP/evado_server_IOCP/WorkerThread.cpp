@@ -133,7 +133,7 @@ void SESSION::do_recv() {
 			return;
 		}
 	}
-	std::cout << "[서버] " << _id << "번 소켓 수신 대기 시작\n";
+	/*std::cout << "[서버] " << _id << "번 소켓 수신 대기 시작\n";*/
 }
 
 void SESSION::do_send(void* buff)
@@ -192,7 +192,7 @@ void BroadcastToAll(void* pkt, long long exclude_id = -1)
 
 void SESSION::process_packet(unsigned char* p)
 {
-	std::cout << "[서버] 패킷 처리 시작 - 크기: " << (int)p[0] << ", 타입: " << (int)p[1] << "\n";
+	/*std::cout << "[서버] 패킷 처리 시작 - 크기: " << (int)p[0] << ", 타입: " << (int)p[1] << "\n";*/
 	const unsigned char packet_type = p[1];
 	switch (packet_type) {
 	case CS_P_LOGIN:
@@ -366,6 +366,8 @@ void SESSION::process_packet(unsigned char* p)
 	case CS_P_ITEM_MOVE:
 	{
 		cs_packet_item_move* packet = reinterpret_cast<cs_packet_item_move*>(p);
+
+		cout << "좌표 : " << packet->position.x << ", " << packet->position.y << ", " << packet->position.z << " ( ID : " << packet->item_id << ")" << endl;
 
 		g_item_manager.UpdateItemPosition(packet->item_id, packet->position);
 
@@ -551,7 +553,8 @@ void InitializeMonsters() {
 
 // [A*] 길을 찾기 위한 Map
 bool IsObstacleObject(const std::string& name) {
-	static const std::vector<std::string> obstacles = { "벽", "Wall", "파이프", "Pipe" };
+	static const std::vector<std::string> obstacles = { /*"sprinkler", "wall", "shelf", "pipe","barrel","cart",
+		"carwalk","ceiling","corridor","fusebox","shelves","pallet","pillar"*/"Map"};
 	for (const auto& str : obstacles) {
 		if (name.find(str) != std::string::npos) return true;
 	}

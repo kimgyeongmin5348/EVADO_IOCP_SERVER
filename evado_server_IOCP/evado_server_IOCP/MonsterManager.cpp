@@ -98,8 +98,7 @@ void MonsterManager::UpdateAllMonsters(float deltaTime, const std::vector<SESSIO
             }
         }
 
-        // 몬스터 업데이트 (공격 성공 시 true 반환)
-        //bool attacked = monster->Update(deltaTime, nearestPlayer->_position);
+        // 몬스터 업데이트 (공격 성공 시 true 반환
         bool attacked = monster->Update(deltaTime, nearestPlayer->_position, worldMap);
 
         // 공격 성공 시 HP 감소
@@ -111,6 +110,7 @@ void MonsterManager::UpdateAllMonsters(float deltaTime, const std::vector<SESSIO
 
         // 현재 위치/상태 저장
         XMFLOAT3 currentPos = monster->GetSpiderPosition();
+        XMFLOAT3 currentRot = monster->GetRotation();
         uint8_t currentState = monster->GetSpiderAnimaitionState();
 
         // 상태 변화 체크
@@ -121,10 +121,12 @@ void MonsterManager::UpdateAllMonsters(float deltaTime, const std::vector<SESSIO
             pkt.monsterID = monster->GetSpiderID();
             pkt.position = currentPos;
             pkt.state = currentState;
+            pkt.rotation = currentRot;
 
-            //std::cout << "[ 몬스터 ] Spider 이동: ID=" << pkt.monsterID
-            //    << " 새 위치(" << pkt.position.x << "," << pkt.position.z << ")"
-            //    << " 상태: " << static_cast<int>(pkt.state) << "\n";
+            std::cout << "[ 몬스터 ] Spider 이동: ID=" << pkt.monsterID
+                << " 새 위치(" << pkt.position.x << "," << pkt.position.z << ")"
+                << "회전 : " << pkt.rotation.y
+                << " 상태: " << static_cast<int>(pkt.state) << "\n";
 
             BroadcastToAll(&pkt, -1);
         }

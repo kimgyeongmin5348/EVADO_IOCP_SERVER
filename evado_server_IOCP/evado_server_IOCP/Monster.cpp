@@ -104,6 +104,10 @@ bool Spider::Update(float dt, const XMFLOAT3& playerPos, const bool map[MAP_HEIG
                     ddx /= len; ddz /= len;
                     _position.x += ddx * moveSpeed * dt;
                     _position.z += ddz * moveSpeed * dt;
+
+                    float yaw = atan2f(ddx, ddz);
+                    SetRotation({ 0.f, yaw, 0.f });
+
                     _state = static_cast<uint8_t>(MonsterAnimationState::WALK);
                 }
             }
@@ -116,7 +120,7 @@ bool Spider::Update(float dt, const XMFLOAT3& playerPos, const bool map[MAP_HEIG
                 _attackCooldown = 1.0f;
                 return true; // 공격 성공!
             }
-            std::cout << "[몬스터] : 공격 ! " << '\n';
+           
         }
     }
     else {

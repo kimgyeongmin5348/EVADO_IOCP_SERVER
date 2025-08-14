@@ -25,11 +25,11 @@ constexpr char SC_P_LOGIN_FAIL = 7;
 
 
 constexpr float TILE_SIZE = 1.0f;
-constexpr float MAP_ORIGIN_X = -100.0f;
-constexpr float MAP_ORIGIN_Z = -100.0f;
+constexpr float MAP_ORIGIN_X = -100.0f;    // ÁÂ»ó´Ü xÁÂÇ¥ -90.0f
+constexpr float MAP_ORIGIN_Z = -100.0f;     // ÁÂ»ó´Ü zÁÂÇ¥ 36.0f
 
-constexpr unsigned short MAP_WIDTH = 200;  // Àü¿¡´Â 8ÀÌ¾úÀ½.
-constexpr unsigned short MAP_HEIGHT = 200;
+constexpr unsigned short MAP_WIDTH = 174;
+constexpr unsigned short MAP_HEIGHT = 180;
 
 constexpr char SC_P_ITEM_SPAWN = 9;
 constexpr char SC_P_ITEM_DESPAWN = 10;
@@ -221,9 +221,11 @@ struct sc_packet_shop_sell_ack
 // Monster
 enum class MonsterAnimationState : int
 {
-	IDLE = 1,
-	WALK = 2,
-	ATTACK = 2
+	IDLE = 0,
+	WALK = 1,
+	RUN = 2,
+	ATTACK = 3,
+	DEATH = 4
 };
 
 struct sc_packet_monster_spawn
@@ -242,6 +244,7 @@ struct sc_packet_monster_move
 	char				type;
 	long long			monsterID;	
 	XMFLOAT3			position;
+	XMFLOAT3			rotation;
 	int					state;
 };
 

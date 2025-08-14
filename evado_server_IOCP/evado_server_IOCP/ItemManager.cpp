@@ -53,7 +53,6 @@ void ItemManager::UpdateItemPosition(long long id, XMFLOAT3 pos) {
 
     auto it = _items.find(id);
     if (it == _items.end()) {
-        std::cerr << "[서버] 아이템 위치 갱신 실패: 존재하지 않는 ID " << id << "\n";
         return;
     }
 
@@ -68,7 +67,4 @@ void ItemManager::UpdateItemPosition(long long id, XMFLOAT3 pos) {
     move_pkt.position = pos;
 
     BroadcastToAll(&move_pkt, -1);
-
-    std::cout << "[서버] 아이템 위치 갱신: ID=" << id
-        << " 새 위치(" << pos.x << "," << pos.y << "," << pos.z << ")\n";
 }

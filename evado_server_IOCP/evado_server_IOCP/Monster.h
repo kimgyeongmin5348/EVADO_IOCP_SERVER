@@ -34,11 +34,17 @@ public:
 
 	void SetSpiderPostion(XMFLOAT3 pos) { _position = pos; }
 	XMFLOAT3 GetSpiderPosition() const { return _position; }
+
 	int64_t GetSpiderID() const { return _monsterID; }
+
 	void SetSpiderAnimation(uint8_t state) { _state = state; }
 	uint8_t GetSpiderAnimaitionState()const { return _state; }
+
 	int GetHP() const { return _hp; }
 	void SetHP(int hp) { _hp = hp; }
+
+	void SetRotation(const XMFLOAT3& rot) { _rotation = rot; }
+	XMFLOAT3 GetRotation() const { return _rotation; }
 
 	void FindPath(const TileCoord& to, const bool map[MAP_HEIGHT][MAP_WIDTH]);
 	// 테스트용: path size 확인 등 getter
@@ -49,6 +55,7 @@ private:
 	uint8_t			_state;
 	float			_attackCooldown = 0.0f;
 	int				_hp;
+	XMFLOAT3		_rotation;
 
 	// **** (추가) A* 경로 저장 ****
 	std::queue<TileCoord> _path;
