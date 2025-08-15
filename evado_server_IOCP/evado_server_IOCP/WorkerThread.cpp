@@ -367,9 +367,9 @@ void SESSION::process_packet(unsigned char* p)
 	{
 		cs_packet_item_move* packet = reinterpret_cast<cs_packet_item_move*>(p);
 
-		cout << "ÁÂÇ¥ : " << packet->position.x << ", " << packet->position.y << ", " << packet->position.z << " ( ID : " << packet->item_id << ")" << endl;
+		//cout << "ÁÂÇ¥ : " << packet->position.x << ", " << packet->position.y << ", " << packet->position.z << " ( ID : " << packet->item_id << ")" << endl;
 
-		g_item_manager.UpdateItemPosition(packet->item_id, packet->position);
+		g_item_manager.UpdateItemPosition(packet->item_id, packet->position, packet->right, packet->look);
 
 		
 		break;

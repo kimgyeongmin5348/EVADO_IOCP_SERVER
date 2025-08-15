@@ -175,14 +175,17 @@ struct cs_packet_item_move {
 	char				type;
 	long long			item_id;
 	XMFLOAT3			position;
-};	
+	XMFLOAT3			right;
+	XMFLOAT3			look;
+};
 
 struct sc_packet_item_move {
 	unsigned char		size;
 	char				type;
 	long long			item_id;
 	XMFLOAT3			position;
-	long long			holder_id; // 소유자 ID (0 = 지면에 있음)
+	XMFLOAT3			right;
+	XMFLOAT3			look;
 };
 
 // 상점

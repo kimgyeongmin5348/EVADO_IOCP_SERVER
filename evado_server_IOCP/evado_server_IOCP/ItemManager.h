@@ -9,7 +9,7 @@ public:
     void SpawnItem(long long id, XMFLOAT3 pos, int item_type, short cash);
     void DespawnItem(long long id);
     Item* GetItem(long long id);
-    void UpdateItemPosition(long long id, XMFLOAT3 pos);
+    void UpdateItemPosition(long long id, XMFLOAT3 pos, XMFLOAT3 right, XMFLOAT3 look);
 
     std::vector<Item*> GetAllItems() {
         std::lock_guard<std::mutex> lock(_item_mutex);

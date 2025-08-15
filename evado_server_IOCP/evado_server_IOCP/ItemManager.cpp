@@ -48,7 +48,8 @@ void ItemManager::DespawnItem(long long id) {
 //    return (it != _items.end()) ? it->second : nullptr;
 //}
 
-void ItemManager::UpdateItemPosition(long long id, XMFLOAT3 pos) {
+void ItemManager::UpdateItemPosition(long long id, XMFLOAT3 pos, XMFLOAT3 right, XMFLOAT3 look)
+{
     std::lock_guard<std::mutex> lock(_item_mutex);
 
     auto it = _items.find(id);
@@ -58,6 +59,7 @@ void ItemManager::UpdateItemPosition(long long id, XMFLOAT3 pos) {
 
     // 실제 아이템 위치 갱신
     it->second->SetPosition(pos);  // 또는 _item_position 직접 변경
+    it->second->SetRotate(right, look);
 
     // 위치 변경 알림용 패킷 생성 및 전송
     sc_packet_item_move move_pkt;
@@ -65,6 +67,8 @@ void ItemManager::UpdateItemPosition(long long id, XMFLOAT3 pos) {
     move_pkt.type = SC_P_ITEM_MOVE;
     move_pkt.item_id = id;
     move_pkt.position = pos;
+    move_pkt.right = right;
+    move_pkt.look = look;
 
     BroadcastToAll(&move_pkt, -1);
 }
