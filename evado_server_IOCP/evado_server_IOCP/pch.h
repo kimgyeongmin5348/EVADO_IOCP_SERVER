@@ -25,8 +25,8 @@ constexpr char SC_P_LOGIN_FAIL = 7;
 
 
 constexpr float TILE_SIZE = 1.0f;
-constexpr float MAP_ORIGIN_X = -100.0f;    // ÁÂ»ó´Ü xÁÂÇ¥ -90.0f
-constexpr float MAP_ORIGIN_Z = -100.0f;     // ÁÂ»ó´Ü zÁÂÇ¥ 36.0f
+constexpr float MAP_ORIGIN_X = -90.0f;    // ÁÂ»ó´Ü xÁÂÇ¥ -90.0f
+constexpr float MAP_ORIGIN_Z = -144.0f;     // ÁÂ»ó´Ü zÁÂÇ¥ 36.0f
 
 constexpr unsigned short MAP_WIDTH = 174;
 constexpr unsigned short MAP_HEIGHT = 180;
@@ -57,6 +57,11 @@ constexpr char SC_P_SHOP_BUY_ACK = 23;
 constexpr char SC_P_SHOP_SELL_ACK = 24;
 
 constexpr char CS_P_LOADING_DONE = 25;
+
+constexpr char CS_P_FLASHLIGHT = 28;
+constexpr char SC_P_FLASHLIGHT = 29;
+constexpr char CS_P_PARTICLE_IMPACT = 30;
+constexpr char SC_P_PARTICLE_IMPACT = 31;
 
 
 #pragma pack (push, 1)
@@ -267,6 +272,34 @@ struct sc_packet_update_monster_hp
 	int					hp;
 };
 
+//particle
+struct cs_packet_flashlight {
+	unsigned char		size;
+	char				type;
+	long long			player_id;
+	bool				flashlight_on;
+};
+
+struct sc_packet_flashlight {
+	unsigned char		size;
+	char				type;
+	long long			player_id;
+	bool				flashlight_on;
+};
+
+struct cs_packet_particle_impact {
+	unsigned char		size;
+	char				type;
+	long long			player_id;
+	XMFLOAT3			impact_pos;
+};
+
+struct sc_packet_particle_impact {
+	unsigned char		size;
+	char				type;
+	long long			player_id;
+	XMFLOAT3			impact_pos;
+};
 
 #pragma pack (pop)
 

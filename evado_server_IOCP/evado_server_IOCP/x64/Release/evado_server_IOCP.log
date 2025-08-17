@@ -6,10 +6,12 @@
   MonsterManager.cpp
 D:\4th_졸업작품\EVADO_IOCP_SERVER\evado_server_IOCP\evado_server_IOCP\MonsterManager.cpp(106,35): warning C4244: '-=': 'double'에서 'short'(으)로 변환하면서 데이터가 손실될 수 있습니다.
   WorkerThread.cpp
+D:\4th_졸업작품\EVADO_IOCP_SERVER\evado_server_IOCP\evado_server_IOCP\WorkerThread.cpp(555,14): warning C4244: '초기화 중': 'float'에서 'short'(으)로 변환하면서 데이터가 손실될 수 있습니다.
   main.cpp
   코드를 생성하고 있습니다.
-  25 of 1718 functions ( 1.5%) were compiled, the rest were copied from previous compilation.
-    2 functions were new in current compilation
-    7 functions had inline decision re-evaluated but remain unchanged
+D:\4th_졸업작품\EVADO_IOCP_SERVER\evado_server_IOCP\evado_server_IOCP\Monster.cpp(138): warning C4715: 'Spider::Update': 모든 제어 경로에서 값을 반환하지는 않습니다.
+  5 of 1717 functions ( 0.3%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    2 functions had inline decision re-evaluated but remain unchanged
   코드를 생성했습니다.
   evado_server_IOCP.vcxproj -> D:\4th_졸업작품\EVADO_IOCP_SERVER\evado_server_IOCP\x64\Release\evado_server_IOCP.exe

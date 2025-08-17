@@ -123,10 +123,10 @@ void MonsterManager::UpdateAllMonsters(float deltaTime, const std::vector<SESSIO
             pkt.state = currentState;
             pkt.rotation = currentRot;
 
-            std::cout << "[ 몬스터 ] Spider 이동: ID=" << pkt.monsterID
-                << " 새 위치(" << pkt.position.x << "," << pkt.position.z << ")"
-                << "회전 : " << pkt.rotation.y
-                << " 상태: " << static_cast<int>(pkt.state) << "\n";
+            //std::cout << "[ 몬스터 ] Spider 이동: ID=" << pkt.monsterID
+            //    << " 새 위치(" << pkt.position.x << "," << pkt.position.z << ")"
+            //    << "회전 : " << pkt.rotation.y
+            //    << " 상태: " << static_cast<int>(pkt.state) << "\n";
 
             BroadcastToAll(&pkt, -1);
         }

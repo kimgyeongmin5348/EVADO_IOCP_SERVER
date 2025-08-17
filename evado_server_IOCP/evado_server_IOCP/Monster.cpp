@@ -4,51 +4,6 @@ Spider::Spider(int64_t id, XMFLOAT3 pos, uint8_t state, int hp)
     : _monsterID(id), _position(pos), _state(state), _hp(hp) {}
 
 
-//bool Spider::Update(float fTimeElapsed, const XMFLOAT3& playerPos) {
-//
-//    float dx = playerPos.x - _position.x;
-//    float dz = playerPos.z - _position.z;
-//    float distance = sqrtf(dx * dx + dz * dz);
-//
-//    // 인식 범위
-//    const float aggroRange = 3.0f;
-//    // 공격 범위
-//    const float attackRange = 2.0f;
-//    // 이동 속도  <- 플레이어 이동속도 보고 설정해보자.
-//    const float moveSpeed = 2.5f;
-//
-//    _attackCooldown -= fTimeElapsed;
-//
-//    if (distance <= aggroRange) {
-//        if (distance > attackRange) {
-//            // 추적(이동)
-//            _state = static_cast<uint8_t>(MonsterAnimationState::WALK);
-//
-//            float dirX = dx / distance;
-//            float dirZ = dz / distance;
-//
-//            _position.x += dirX * moveSpeed * fTimeElapsed;
-//            _position.z += dirZ * moveSpeed * fTimeElapsed;
-//            return false;
-//        }
-//        else {
-//            // 공격 로직
-//            _state = static_cast<uint8_t>(MonsterAnimationState::ATTACK);
-//
-//            if (_attackCooldown <= 0.0f) {
-//                _attackCooldown = 1.0f; // 1초 쿨타임
-//                return true; // 공격 성공!
-//            }
-//            std::cout << "[몬스터] : 공격 ! " << '\n';
-//
-//            
-//        }
-//    }
-//    else {
-//        _state = static_cast<uint8_t>(MonsterAnimationState::IDLE);
-//    }
-//}
-
 
 // A* 알고리즘 적용
 bool Spider::Update(float dt, const XMFLOAT3& playerPos, const bool map[MAP_HEIGHT][MAP_WIDTH]) {
@@ -56,43 +11,42 @@ bool Spider::Update(float dt, const XMFLOAT3& playerPos, const bool map[MAP_HEIG
     float dz = playerPos.z - _position.z;
     float distance = sqrtf(dx * dx + dz * dz);
 
-    const float aggroRange = 15.0f;
-    const float attackRange = 2.0f;
-    const float moveSpeed = 4.5f;
+    const float aggroRange = 8.0f;
+    const float attackRange = 3.0f;
+    const float moveSpeed = 3.5f;
 
     _attackCooldown -= dt;
+    bool pathChanged = false;
 
     if (distance <= aggroRange) {
         if (distance > attackRange) {
             // 1. 목표 타일 좌표 계산
             TileCoord playerTile = WorldToTile(playerPos.x, playerPos.z);
 
-            // x/y가 벗어나면 패스 (디펜시브)
+            // x/y가 벗어나면 패스
             if (playerTile.x < 0 || playerTile.x >= MAP_WIDTH ||
                 playerTile.y < 0 || playerTile.y >= MAP_HEIGHT)
                 return false;
 
             // 2. 경로 없거나, 목적지가 바뀌면 재탐색
-            if (_path.empty() || _path.back() != playerTile) {
-                FindPath(playerTile, map);  // A* 알고리즘 적용
+            if (!_hasLastTarget || !(playerTile == _lastTargetTile)) {
+                FindPath(playerTile, map);
+                _lastTargetTile = playerTile;
+                _hasLastTarget = true;
+                pathChanged = true;
             }
 
             // 3. 경로따라 이동
             if (!_path.empty()) {
                 TileCoord next = _path.front();
                 if (!map[next.y][next.x]) {
-                    std::cout << "[몬스터] 장애물 충돌 발생: (" << next.x << ", " << next.y << ")" << std::endl;
-                    _path = {}; // 경로 초기화(혹은 idle 전환 등 처리)
+                    _path = {};
+                    _hasLastTarget = false;
                     _state = static_cast<uint8_t>(MonsterAnimationState::IDLE);
                     return false;
                 }
                 float nextX, nextZ;
                 TileToWorld(next.x, next.y, nextX, nextZ);
-
-             /*   std::cout << "[몬스터] " << _monsterID << " 현재 위치("
-                    << _position.x << ", " << _position.z
-                    << ") -> 다음 타일(" << next.x << "," << next.y
-                    << ") | 목표좌표(" << nextX << "," << nextZ << ")\n";*/
 
                 float ddx = nextX - _position.x;
                 float ddz = nextZ - _position.z;
@@ -105,29 +59,84 @@ bool Spider::Update(float dt, const XMFLOAT3& playerPos, const bool map[MAP_HEIG
                     _position.x += ddx * moveSpeed * dt;
                     _position.z += ddz * moveSpeed * dt;
 
+                    float lookDx = playerPos.x - _position.x;
+                    float lookDz = playerPos.z - _position.z;
+                    float lookYaw = atan2f(lookDx, lookDz);
+                    SetRotation({ 0.f, lookYaw, 0.f });
+
+                    _state = static_cast<uint8_t>(MonsterAnimationState::WALK);
+                }
+            }
+            if (distance <= attackRange) {
+                float lookDx = playerPos.x - _position.x;
+                float lookDz = playerPos.z - _position.z;
+                float lookYaw = atan2f(lookDx, lookDz);
+                SetRotation({ 0.f, lookYaw, 0.f });
+
+                _state = static_cast<uint8_t>(MonsterAnimationState::ATTACK);
+                if (_attackCooldown <= 0.0f) {
+                    _attackCooldown = 1.0f;
+                    return true; // 공격 성공!
+                }
+            }
+
+            return false;
+        }
+        else {
+            _state = static_cast<uint8_t>(MonsterAnimationState::WALK);
+
+            _patrolCooldown -= dt;
+
+            if (!_hasPatrolTarget || _patrolCooldown <= 0.0f) {
+                // 랜덤 좌표 선택, 맵 안의 걸을 수 있는 타일만 선택
+                int attempts = 0;
+                do {
+                    int x = rand() % MAP_WIDTH;
+                    int y = rand() % MAP_HEIGHT;
+                    if (map[y][x]) {
+                        _patrolTarget = TileCoord{ x, y };
+                        _hasPatrolTarget = true;
+                        break;
+                    }
+                    attempts++;
+                } while (attempts < 20); // 맵이 좁은경우 무한루프 방지
+                _patrolCooldown = 1.0f + static_cast<float>(rand()) / RAND_MAX * 1.5f; // 1~2.5초마다 목표 갱신
+                FindPath(_patrolTarget, map);
+            }
+            // 목적지 이동
+            if (!_path.empty()) {
+                TileCoord next = _path.front();
+                if (!map[next.y][next.x]) {
+                    _path = {};
+                    _hasPatrolTarget = false;
+                    _state = static_cast<uint8_t>(MonsterAnimationState::IDLE);
+                    return false;
+                }
+                float nextX, nextZ;
+                TileToWorld(next.x, next.y, nextX, nextZ);
+
+                float ddx = nextX - _position.x;
+                float ddz = nextZ - _position.z;
+                float len = sqrtf(ddx * ddx + ddz * ddz);
+                if (len < 0.05f) {
+                    _path.pop(); // 도착
+                    if (_path.empty()) _hasPatrolTarget = false;
+                }
+                else {
+                    ddx /= len; ddz /= len;
+                    _position.x += ddx * moveSpeed * dt;
+                    _position.z += ddz * moveSpeed * dt;
                     float yaw = atan2f(ddx, ddz);
                     SetRotation({ 0.f, yaw, 0.f });
 
                     _state = static_cast<uint8_t>(MonsterAnimationState::WALK);
                 }
             }
-            return false;
         }
-        else {
-            // 공격
-            _state = static_cast<uint8_t>(MonsterAnimationState::ATTACK);
-            if (_attackCooldown <= 0.0f) {
-                _attackCooldown = 1.0f;
-                return true; // 공격 성공!
-            }
-           
-        }
-    }
-    else {
-        _state = static_cast<uint8_t>(MonsterAnimationState::IDLE);
-    }
-    return false;
+        return false;
+     }
 }
+
 
 // A* 알고리즘
 void Spider::FindPath(const TileCoord& to, const bool map[MAP_HEIGHT][MAP_WIDTH]) {
@@ -186,13 +195,6 @@ void Spider::FindPath(const TileCoord& to, const bool map[MAP_HEIGHT][MAP_WIDTH]
             x = px; y = py;
         }
         std::reverse(rev_path.begin(), rev_path.end());
-
-      /*  std::cout << "[A* 경로] 몬스터ID: " << _monsterID << " 경로: ";
-        for (const auto& tile : rev_path) {
-            std::cout << " -> (" << tile.x << "," << tile.y << ")";
-        }
-        std::cout << std::endl;*/
-
         for (const auto& tile : rev_path) {
             q.push(tile);
         }

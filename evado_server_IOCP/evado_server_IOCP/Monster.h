@@ -57,6 +57,12 @@ private:
 	int				_hp;
 	XMFLOAT3		_rotation;
 
+	TileCoord		_patrolTarget;      // 정처 없이 걷는 목적지
+	bool			_hasPatrolTarget = false;
+	float			_patrolCooldown = 0.0f;
+
+	TileCoord		_lastTargetTile;
+	bool			_hasLastTarget = false;
 	// **** (추가) A* 경로 저장 ****
 	std::queue<TileCoord> _path;
 	

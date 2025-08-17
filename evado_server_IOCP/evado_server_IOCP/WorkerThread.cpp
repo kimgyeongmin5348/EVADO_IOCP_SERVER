@@ -319,9 +319,9 @@ void SESSION::process_packet(unsigned char* p)
 		_right = packet->right;
 		_animState = packet->animState;
 		
-		//std::cout << "[서버] " << _id << "번 클라이언트 위치 수신: (" << _position.x << ", " << _position.y << ", " << _position.z << ", "
-		//	<< _look.x << ", " << _look.y << ", " << _look.z << ", "
-		//	<< _right.x << ", " << _right.y << ", " << _right.z << ", " << static_cast<int>(_animState) << ")\n";
+		/*std::cout << "[서버] " << _id << "번 클라이언트 위치 수신: (" << _position.x << ", " << _position.y << ", " << _position.z << ", "
+			<< _look.x << ", " << _look.y << ", " << _look.z << ", "
+			<< _right.x << ", " << _right.y << ", " << _right.z << ", " << static_cast<int>(_animState) << ")\n";*/
 
 		sc_packet_move mp;
 		mp.size = sizeof(mp);
@@ -372,6 +372,39 @@ void SESSION::process_packet(unsigned char* p)
 		g_item_manager.UpdateItemPosition(packet->item_id, packet->position, packet->right, packet->look);
 
 		
+		break;
+	}
+
+	case CS_P_FLASHLIGHT: 
+	{
+		cs_packet_flashlight* pkt = reinterpret_cast<cs_packet_flashlight*>(p);
+
+		std::cout << "[서버] 플레이어 " << pkt->player_id << " 플래시라이트 상태: " << (pkt->flashlight_on ? "ON" : "OFF") << std::endl;
+
+		sc_packet_flashlight broadcast_pkt;
+		broadcast_pkt.size = sizeof(broadcast_pkt);
+		broadcast_pkt.type = SC_P_FLASHLIGHT;
+		broadcast_pkt.player_id = pkt->player_id;
+		broadcast_pkt.flashlight_on = pkt->flashlight_on;
+
+		BroadcastToAll(&broadcast_pkt, pkt->player_id);
+		break;
+	}
+
+	case CS_P_PARTICLE_IMPACT: 
+	{
+		cs_packet_particle_impact* pkt = reinterpret_cast<cs_packet_particle_impact*>(p);
+
+		std::cout << "[서버] 플레이어 " << pkt->player_id
+			<< " 임팩트 위치: (" << pkt->impact_pos.x << ", " << pkt->impact_pos.y << ", " << pkt->impact_pos.z << ")\n";
+
+		sc_packet_particle_impact broadcast_pkt;
+		broadcast_pkt.size = sizeof(broadcast_pkt);
+		broadcast_pkt.type = SC_P_PARTICLE_IMPACT;
+		broadcast_pkt.player_id = pkt->player_id;
+		broadcast_pkt.impact_pos = pkt->impact_pos;
+
+		BroadcastToAll(&broadcast_pkt, pkt->player_id);
 		break;
 	}
 
@@ -501,20 +534,29 @@ void SpawnItemToAll(long long id, XMFLOAT3 pos, int item_type, short cash) {
 }
 
 void TestSpawnMultipleItems() {
+	XMFLOAT3 positions[8] = {
+		{-2, 0, 19},
+		{-2, 0, 22},
+		{2, 0, -7},
+		{4, 0, -56},
+		{-20, 0, 1},
+		{-54, 0, -92},
+		{-46, 0, -45},
+		{27, 0, -5}
+	};
+	float itemPrice[8] = { 80, 150, 80, 200, 120, 130, 140, 190 };
+
 	std::random_device rd;
 	std::mt19937 gen(rd());
-
-	for (int i = 0; i < 3; ++i) {
-		XMFLOAT3 pos = { -2.0f, 0.f, 19.0f + i * 3 };
+	for (int i = 0; i < 8; ++i) {
+		XMFLOAT3 pos = positions[i];   // 배열에서 좌표 직접 꺼냄
 		int item_type = (i % 4) + 1;
 		long long item_id = 20000 + i;
-
-		short cash = static_cast<short>(g_item_prices[item_type]);
+		short cash = itemPrice[i];
 		g_item_manager.SpawnItem(item_id, pos, item_type, cash);
 		SpawnItemToAll(item_id, pos, item_type, cash);
 	}
 }
-
 // 몬스터 생성
 void MGameLoopThread() {
 	auto last_time = std::chrono::steady_clock::now();
@@ -553,8 +595,8 @@ void InitializeMonsters() {
 
 // [A*] 길을 찾기 위한 Map
 bool IsObstacleObject(const std::string& name) {
-	static const std::vector<std::string> obstacles = { /*"sprinkler", "wall", "shelf", "pipe","barrel","cart",
-		"carwalk","ceiling","corridor","fusebox","shelves","pallet","pillar"*/"Map"};
+	static const std::vector<std::string> obstacles = { "wall", "shelf", "pipe","barrel",
+		"carwalk","ceiling","corridor","fusebox","shelves","pallet","pillar"};
 	for (const auto& str : obstacles) {
 		if (name.find(str) != std::string::npos) return true;
 	}
@@ -568,7 +610,7 @@ void InitializeWorldMap() {
 		for (int x = 0; x < MAP_WIDTH; ++x)
 			worldMap[y][x] = true;
 
-	// 1. 맵 오브젝트 인스턴스 파일(.bin 등) 로드 (직접 파싱 필요)
+	// 1. 맵 오브젝트 인스턴스 파일(.bin 등) 로드
 	std::ifstream inFile("Model/Map/Setter/Map_objects_instances_setter.bin", std::ios::binary);
 	if (!inFile) {
 		std::cerr << "장애물 파일을 열 수 없습니다!" << std::endl;
