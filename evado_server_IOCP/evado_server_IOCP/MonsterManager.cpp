@@ -28,9 +28,9 @@ void MonsterManager::SpawnMonster(int64_t id, const XMFLOAT3& pos, uint8_t state
     Spider* newMonster = new Spider(id, pos, state, hp);
     _monsters[id] = newMonster;
 
-    std::cout << "[서버] 몬스터 생성: ID=" << id
-        << " 위치(" << pos.x << "," << pos.y << "," << pos.z << ")"
-        << " 상태: " << static_cast<int>(state) << ", HP : "<< hp << "\n";
+    //std::cout << "[서버] 몬스터 생성: ID=" << id
+    //    << " 위치(" << pos.x << "," << pos.y << "," << pos.z << ")"
+    //    << " 상태: " << static_cast<int>(state) << ", HP : "<< hp << "\n";
 
     // 클라이언트에 스폰 패킷 전송
     sc_packet_monster_spawn pkt;
@@ -101,19 +101,16 @@ void MonsterManager::UpdateAllMonsters(float deltaTime, const std::vector<SESSIO
         // 몬스터 업데이트 (공격 성공 시 true 반환
         bool attacked = monster->Update(deltaTime, nearestPlayer->_position, worldMap);
 
-        // 공격 성공 시 HP 감소
         if (attacked && nearestPlayer) {
-            nearestPlayer->_hp -= 0.1;
+            nearestPlayer->_hp -= 10;
             if (nearestPlayer->_hp < 0) nearestPlayer->_hp = 0;
             nearestPlayer->send_player_info_packet();
         }
 
-        // 현재 위치/상태 저장
         XMFLOAT3 currentPos = monster->GetSpiderPosition();
         XMFLOAT3 currentRot = monster->GetRotation();
         uint8_t currentState = monster->GetSpiderAnimaitionState();
 
-        // 상태 변화 체크
         if (memcmp(&prevPos, &currentPos, sizeof(XMFLOAT3)) != 0 || prevState != currentState) {
             sc_packet_monster_move pkt;
             pkt.size = sizeof(pkt);

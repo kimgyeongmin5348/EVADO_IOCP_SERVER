@@ -1,7 +1,7 @@
 #pragma once
 #include "Common.h"
 
-// 타일좌표 구조체 [A*]
+// [A*]
 struct TileCoord {
 	int x, y;
 	bool operator==(const TileCoord& rhs) const { return x == rhs.x && y == rhs.y; }
@@ -13,7 +13,6 @@ struct NodeInfo {
 	bool closed = false;
 };
 
-// open 노드 큐에 넣을 record
 struct OpenNode {
 	int x, y;
 	float f; // g + h
@@ -28,8 +27,6 @@ class Spider {
 public:
 	Spider(int64_t id, XMFLOAT3 pos, uint8_t state, int hp);
 
-	// bool Update(float fTimeElapsed, const XMFLOAT3& playerPos);  // AI 로직
-	// **A* 경로사용을 위한 시그니처: map 파라미터 추가**
 	bool Update(float fTimeElapsed, const XMFLOAT3& playerPos, const bool map[MAP_HEIGHT][MAP_WIDTH]);
 
 	void SetSpiderPostion(XMFLOAT3 pos) { _position = pos; }
@@ -47,7 +44,6 @@ public:
 	XMFLOAT3 GetRotation() const { return _rotation; }
 
 	void FindPath(const TileCoord& to, const bool map[MAP_HEIGHT][MAP_WIDTH]);
-	// 테스트용: path size 확인 등 getter
 
 private:
 	int64_t  		_monsterID;
@@ -63,7 +59,8 @@ private:
 
 	TileCoord		_lastTargetTile;
 	bool			_hasLastTarget = false;
-	// **** (추가) A* 경로 저장 ****
+
+
 	std::queue<TileCoord> _path;
 	
 public:

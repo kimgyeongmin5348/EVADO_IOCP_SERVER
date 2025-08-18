@@ -23,9 +23,9 @@ void ItemManager::SpawnItem(long long id, XMFLOAT3 pos, int item_type, short cas
 
     Item* new_item = new Item(id, pos, item_type, cash);
     _items[id] = new_item;
-    std::cout << "[서버] 아이템 생성: ID=" << id
-        << " 위치(" << pos.x << "," << pos.y << "," << pos.z << ")"
-        << " 타입: " << item_type << ", 값어치 : " << cash << "\n";
+    //std::cout << "[서버] 아이템 생성: ID=" << id
+    //    << " 위치(" << pos.x << "," << pos.y << "," << pos.z << ")"
+    //    << " 타입: " << item_type << ", 값어치 : " << cash << "\n";
 }
 
 void ItemManager::DespawnItem(long long id) {
@@ -58,10 +58,9 @@ void ItemManager::UpdateItemPosition(long long id, XMFLOAT3 pos, XMFLOAT3 right,
     }
 
     // 실제 아이템 위치 갱신
-    it->second->SetPosition(pos);  // 또는 _item_position 직접 변경
+    it->second->SetPosition(pos);
     it->second->SetRotate(right, look);
 
-    // 위치 변경 알림용 패킷 생성 및 전송
     sc_packet_item_move move_pkt;
     move_pkt.size = sizeof(move_pkt);
     move_pkt.type = SC_P_ITEM_MOVE;
