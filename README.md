@@ -4,3 +4,13 @@
 
 
 <img width="841" height="532" alt="image" src="https://github.com/user-attachments/assets/42c9ab8e-88c8-428c-9e91-480cfa0d8a3a" />
+
+
+세션 관리 시스템
+세션 관리 시스템은 원자적 연산과 뮤텍스 동기화를 사용하여 클라이언트 연결의 스레드 안전 처리를 제공합니다.
+
+ex)
+std::atomic<long long> g_client_counter = 0;
+std::unordered_map<long long, SESSION*> g_sessions;
+std::mutex g_session_mutex;
+
