@@ -19,6 +19,8 @@ std::unordered_map<long long, SESSION*> g_sessions;
 std::mutex g_session_mutex;
 
 
+
+
 AI 경로찾기
 
 A 알고리즘 구현:*
@@ -32,7 +34,14 @@ A 알고리즘 구현:*
 성능 최적화: 캐시된 경로 계산 및 증분 업데이트
 
 
+
+
 메모리 관리
+
+서버는 최적의 성능을 보장하기 위해 여러 메모리 관리 전략을 사용
+
+
+
 
 스레드 분배:
 
