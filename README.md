@@ -2,8 +2,6 @@
 
 Windows용 실시간 멀티플레이어 게임 서버입니다. C++과 WinSock2의 I/O Completion Ports(IOCP)로 클라이언트 연결과 패킷을 처리하고, 별도 게임 루프에서 몬스터의 추적과 공격을 계산합니다. 플레이어, 몬스터, 아이템의 상태 변경을 패킷으로 전달해 여러 클라이언트의 게임 상태를 맞춥니다.
 
-![EVADO 프로젝트 화면](https://github.com/user-attachments/assets/42c9ab8e-88c8-428c-9e91-480cfa0d8a3a)
-
 ## 구현 하이라이트
 
 | 기능 | 구현 내용 |
